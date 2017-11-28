@@ -1,0 +1,77 @@
+apply plugin: 'com.android.application'
+apply plugin: 'org.greenrobot.greendao'
+
+android {
+    compileSdkVersion 26
+
+    defaultConfig {
+        applicationId "com.wayto.track"
+        minSdkVersion 19
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+
+        ndk {
+            abiFilters "armeabi", "armeabi-v7a", "arm64-v8a", "x86", "arm64-v8a", "x86_64"
+        }
+    }
+
+    /*签名文件*/
+    signingConfigs {
+        config {
+            keyAlias 'yunwei'
+            keyPassword 'yunwei@163.com'
+            storeFile file('yunwei.keystore.jks')
+            storePassword 'yunwei@163.com'
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.config
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            signingConfig signingConfigs.config
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    /*GreeDao db配制*/
+    greendao {
+        schemaVersion 1
+        daoPackage 'com.wayto.track.storage'
+        targetGenDir 'src/main/java'
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+
+    compile 'com.google.code.gson:gson:2.8.2'
+
+    /*Butterknife*/
+    compile 'com.jakewharton:butterknife:8.8.1'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
+
+    /*EventBus*/
+    compile 'org.greenrobot:eventbus:3.1.1'
+
+    /*GreeDao*/
+    compile 'org.greenrobot:greendao:3.2.2'
+
+    /*2D地图*/
+//    compile 'com.amap.api:map2d:latest.integration'
+    compile 'com.amap.api:3dmap:latest.integration'
+
+    /*定位*/
+    compile 'com.amap.api:location:latest.integration'
+}
