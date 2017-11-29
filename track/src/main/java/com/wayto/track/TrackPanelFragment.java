@@ -59,6 +59,15 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
     Unbinder unbinder;
 
     private TrackPresent trackPresent;
+    private long trackId;
+    private int status;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        trackId = getArguments().getLong("trackId", 0);
+        status = getArguments().getInt("status", -1);
+    }
 
     @Nullable
     @Override
@@ -66,6 +75,8 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
         View view = inflater.inflate(R.layout.fragment_track_panel, null);
         unbinder = ButterKnife.bind(this, view);
         trackPresent = new TrackPresent(getActivity(), this);
+        trackPresent.onCheckTrack(trackId);
+        initUI();
         return view;
     }
 
@@ -75,10 +86,29 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
         unbinder.unbind();
     }
 
+    /**
+     * 初始化UI
+     * <p>
+     * author: hezhiWu
+     * created at 2017/11/29 11:56
+     */
+    private void initUI() {
+        if (status == TrackConstant.TRACK_START) {
+            trackPresent.onStartTrackGather(false);
+        } else if (status == TrackConstant.TRACK_STOP) {
+            trackPresent.onStopTrackGather();
+        } else if (status == TrackConstant.TRACK_CONTINUE) {
+            trackPresent.onContinueTrackGather();
+        } else if (status == TrackConstant.TRACK_END) {
+            trackPresent.onEndTrackGater();
+        }
+    }
+
     @OnClick({R.id.Track_Panel_back_ImageView, R.id.Track_Panel_history_ImageView, R.id.Track_Panel_Map_ImageView, R.id.Track_start_button, R.id.Track_stop_button, R.id.Track_continue_button, R.id.Track_end_button})
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.Track_Panel_back_ImageView:/*返回*/
+                getActivity().finish();
                 break;
             case R.id.Track_Panel_history_ImageView:/*历史*/
                 break;
@@ -88,7 +118,7 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
                 EventBus.getDefault().post(event);
                 break;
             case R.id.Track_start_button:/*开始*/
-                trackPresent.onStartTrackGather();
+                trackPresent.onStartTrackGather(true);
                 break;
             case R.id.Track_stop_button:/*停止*/
                 trackPresent.onStopTrackGather();
@@ -104,36 +134,57 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
 
     @Override
     public void onCountDownViewVisibility(int visibility) {
+        if (TrackPanelTimerTextView == null)
+            return;
+
         TrackPanelTimerTextView.setVisibility(visibility);
     }
 
     @Override
     public void showCountDownViewNumber(final int number) {
+        if (TrackPanelTimerTextView == null)
+            return;
+
         TrackPanelTimerTextView.setText(String.valueOf(number));
     }
 
     @Override
     public void onTrackPanelActionLayoutVisibility(int visibility) {
+        if (TrackPanelActionLayout == null)
+            return;
+
         TrackPanelActionLayout.setVisibility(visibility);
     }
 
     @Override
     public void onTrackStartButtonVisibility(int visibility) {
+        if (TrackStartButton == null)
+            return;
+
         TrackStartButton.setVisibility(visibility);
     }
 
     @Override
     public void onTrackContinueButtonVisibility(int visibility) {
+        if (TrackContinueButton == null)
+            return;
+
         TrackContinueButton.setVisibility(visibility);
     }
 
     @Override
     public void onTrackStopButtonVisibility(int visibility) {
+        if (TrackStopButton == null)
+            return;
+
         TrackStopButton.setVisibility(visibility);
     }
 
     @Override
     public void onTrackEndButtonVisibility(int visibility) {
+        if (TrackEndButton == null)
+            return;
+
         TrackEndButton.setVisibility(visibility);
     }
 
@@ -146,16 +197,25 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
 
     @Override
     public void onShowTrackDistance(String distance) {
+        if (TrackPanelDistance == null)
+            return;
+
         TrackPanelDistance.setText(distance);
     }
 
     @Override
     public void onShowTrackSpeed(String speed) {
+        if (TrackPanelSpeed == null)
+            return;
+
         TrackPanelSpeed.setText(speed);
     }
 
     @Override
     public void onShowTrackTime(String time) {
+        if (TrackPanelTime == null)
+            return;
+
         TrackPanelTime.setText(time);
     }
 

@@ -3,8 +3,10 @@ package com.wayto.track.data;
 import android.app.Activity;
 import android.view.View;
 
+import com.wayto.track.common.TrackConstant;
 import com.wayto.track.data.source.TrackDataSource;
 import com.wayto.track.data.source.TrackRemote;
+import com.wayto.track.service.data.LocationEntity;
 import com.wayto.track.storage.TrackPointTable;
 
 import java.util.List;
@@ -20,26 +22,77 @@ import java.util.TimerTask;
  */
 public class TrackPresent implements TrackContract.Present, TrackDataSource.TrackCallBack {
 
-    private Activity mContext;
+    private Activity mActivity;
     private TrackContract.TrackPanelView mTrackPanelView;
+    private TrackContract.TrackMapView mTrackMapView;
     private TrackRemote mTrackRemote;
 
     private Timer mTimer;
     private TrackPanelTask trackPanelTask;
     private int indext = 3;
 
-    public TrackPresent(Activity context, TrackContract.TrackPanelView trackPanelView) {
-        this.mContext = context;
+    public TrackPresent(Activity activity, TrackContract.TrackPanelView trackPanelView) {
+        this.mActivity = activity;
         this.mTrackPanelView = trackPanelView;
         this.mTrackRemote = new TrackRemote(this);
     }
 
+    public TrackPresent(Activity activity, TrackContract.TrackMapView trackMapView) {
+        this.mActivity = activity;
+        this.mTrackMapView = trackMapView;
+        if (mTrackMapView == null)
+            this.mTrackRemote = new TrackRemote(this);
+    }
+
     @Override
-    public void onStartTrackGather() {
+    public void onCheckTrack(long trackId) {
+        if (mTrackRemote != null)
+            mTrackRemote.onCheckTrack(trackId);
+    }
+
+    @Override
+    public void getTrackStatus(int status) {
         if (mTrackPanelView == null)
             return;
 
-        startTimer();
+        if (status == TrackConstant.TRACK_START) {
+            mTrackPanelView.onTrackStartButtonVisibility(View.GONE);
+            mTrackPanelView.onTrackStopButtonVisibility(View.VISIBLE);
+            mTrackPanelView.onTrackContinueButtonVisibility(View.GONE);
+            mTrackPanelView.onTrackEndButtonVisibility(View.GONE);
+        } else if (status == TrackConstant.TRACK_STOP) {
+            mTrackPanelView.onTrackStartButtonVisibility(View.GONE);
+            mTrackPanelView.onTrackStopButtonVisibility(View.GONE);
+            mTrackPanelView.onTrackContinueButtonVisibility(View.VISIBLE);
+            mTrackPanelView.onTrackEndButtonVisibility(View.VISIBLE);
+        } else if (status == TrackConstant.TRACK_CONTINUE) {
+            mTrackPanelView.onTrackStartButtonVisibility(View.GONE);
+            mTrackPanelView.onTrackStopButtonVisibility(View.VISIBLE);
+            mTrackPanelView.onTrackContinueButtonVisibility(View.GONE);
+            mTrackPanelView.onTrackEndButtonVisibility(View.GONE);
+        } else if (status == TrackConstant.TRACK_END) {
+            mTrackPanelView.onTrackStartButtonVisibility(View.VISIBLE);
+            mTrackPanelView.onTrackStopButtonVisibility(View.GONE);
+            mTrackPanelView.onTrackContinueButtonVisibility(View.GONE);
+            mTrackPanelView.onTrackEndButtonVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void onStartTrackGather(boolean startTimer) {
+        if (mTrackPanelView == null)
+            return;
+
+        if (startTimer) {
+            startTimer();
+        } else {
+            mTrackPanelView.onTrackStartButtonVisibility(View.GONE);
+            mTrackPanelView.onTrackStopButtonVisibility(View.VISIBLE);
+            mTrackPanelView.onTrackContinueButtonVisibility(View.GONE);
+            mTrackPanelView.onTrackEndButtonVisibility(View.GONE);
+
+            mTrackRemote.onStartTrackGather(mActivity);
+        }
     }
 
     @Override
@@ -47,11 +100,12 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
         if (mTrackPanelView == null)
             return;
 
+        mTrackPanelView.onTrackStartButtonVisibility(View.GONE);
         mTrackPanelView.onTrackContinueButtonVisibility(View.GONE);
         mTrackPanelView.onTrackEndButtonVisibility(View.GONE);
         mTrackPanelView.onTrackStopButtonVisibility(View.VISIBLE);
 
-        mTrackRemote.onContinueTrackGather(mContext);
+        mTrackRemote.onContinueTrackGather(mActivity);
     }
 
     @Override
@@ -59,11 +113,12 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
         if (mTrackPanelView == null)
             return;
 
+        mTrackPanelView.onTrackStartButtonVisibility(View.GONE);
         mTrackPanelView.onTrackStopButtonVisibility(View.GONE);
         mTrackPanelView.onTrackContinueButtonVisibility(View.VISIBLE);
         mTrackPanelView.onTrackEndButtonVisibility(View.VISIBLE);
 
-        mTrackRemote.onStopTrackGather(mContext);
+        mTrackRemote.onStopTrackGather(mActivity);
     }
 
     @Override
@@ -71,37 +126,69 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
         if (mTrackPanelView == null)
             return;
 
+        mTrackPanelView.onTrackStopButtonVisibility(View.GONE);
         mTrackPanelView.onTrackEndButtonVisibility(View.GONE);
         mTrackPanelView.onTrackContinueButtonVisibility(View.GONE);
         mTrackPanelView.onTrackStartButtonVisibility(View.VISIBLE);
 
-        mTrackRemote.onEndTrackGater(mContext);
+        mTrackRemote.onEndTrackGater(mActivity);
         mTrackPanelView.resetView();
     }
 
     @Override
+    public void onQueryTrackPointTables(long trackId) {
+        if (mTrackRemote == null)
+            return;
+
+        mTrackRemote.onQueryTrackPoint(mActivity, trackId);
+    }
+
+    @Override
     public void getTrackDistance(String distance) {
+        if (mTrackPanelView == null)
+            return;
+
         mTrackPanelView.onShowTrackDistance(distance);
     }
 
     @Override
     public void onTrackTime(String time) {
+        if (mTrackPanelView == null)
+            return;
+
         mTrackPanelView.onShowTrackTime(time);
     }
 
     @Override
     public void onTrackSpeed(String speed) {
+        if (mTrackPanelView == null)
+            return;
+
         mTrackPanelView.onShowTrackSpeed(speed);
     }
 
     @Override
     public void onTrackGpsStatues(int status) {
+        if (mTrackPanelView == null)
+            return;
+
         mTrackPanelView.onShowTrackGpsStatues(status);
     }
 
     @Override
-    public void queryTrackPointTables(List<TrackPointTable> trackPointTables) {
+    public void onQueryTrackPointTables(List<TrackPointTable> trackPointTables) {
+        if (mTrackMapView == null)
+            return;
 
+        mTrackMapView.queryTrackPointTables(trackPointTables);
+    }
+
+    @Override
+    public void onRefreshLocationPoint(LocationEntity entity) {
+        if (mTrackMapView == null)
+            return;
+
+        mTrackMapView.refreshLocationPoint(entity);
     }
 
     /**
@@ -149,7 +236,7 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
     class TrackPanelTask extends TimerTask {
         @Override
         public void run() {
-            mContext.runOnUiThread(new Runnable() {
+            mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     if (indext == 0) {
@@ -158,6 +245,8 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
                         if (mTrackPanelView != null) {
                             mTrackPanelView.onTrackStartButtonVisibility(View.GONE);
                             mTrackPanelView.onTrackStopButtonVisibility(View.VISIBLE);
+                            mTrackPanelView.onTrackContinueButtonVisibility(View.GONE);
+                            mTrackPanelView.onTrackEndButtonVisibility(View.GONE);
 
                             mTrackPanelView.onCountDownViewVisibility(View.GONE);
                             mTrackPanelView.onTrackPanelActionLayoutVisibility(View.VISIBLE);
@@ -166,7 +255,7 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
 
                     /*提前1秒调用,解决定时延迟问题*/
                     if (indext == 1 && mTrackRemote != null) {
-                        mTrackRemote.onStartTrackGather(mContext);
+                        mTrackRemote.onStartTrackGather(mActivity);
                     }
 
                     mTrackPanelView.showCountDownViewNumber(indext);

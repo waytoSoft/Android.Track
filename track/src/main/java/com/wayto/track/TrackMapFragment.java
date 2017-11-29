@@ -13,9 +13,17 @@ import com.amap.api.maps.MapView;
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.MyLocationStyle;
 import com.wayto.track.common.NoticeEvent;
+import com.wayto.track.common.SharedPreferencesUtils;
 import com.wayto.track.common.TrackConstant;
+import com.wayto.track.data.TrackContract;
+import com.wayto.track.data.TrackPresent;
+import com.wayto.track.service.data.LocationEntity;
+import com.wayto.track.storage.TrackPointTable;
+import com.wayto.track.utils.IStringUtils;
 
 import org.greenrobot.eventbus.EventBus;
+
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -31,7 +39,7 @@ import butterknife.Unbinder;
  * <p>
  * Copyright (c) 2017 Shenzhen O&M Cloud Co., Ltd. All rights reserved.
  */
-public class TrackMapFragment extends MapFragment {
+public class TrackMapFragment extends MapFragment implements TrackContract.TrackMapView {
 
     @BindView(R.id.Track_MapView)
     MapView TrackMapView;
@@ -39,6 +47,20 @@ public class TrackMapFragment extends MapFragment {
 
     private AMap mAMap;
     private MyLocationStyle locationStyle;
+
+    private long trackId;
+
+    private TrackPresent trackPresent;
+
+    private Thread mThreed;
+
+
+    @Override
+    public void onCreate(Bundle bundle) {
+        super.onCreate(bundle);
+        trackId=getArguments().getLong("trackId",0);
+        trackPresent = new TrackPresent(getActivity(), this);
+    }
 
     @Nullable
     @Override
@@ -52,6 +74,14 @@ public class TrackMapFragment extends MapFragment {
         }
 
         initMapView();
+
+        mThreed = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                trackPresent.onQueryTrackPointTables(trackId);
+            }
+        });
+        mThreed.start();
 
         return rootView;
     }
@@ -73,6 +103,10 @@ public class TrackMapFragment extends MapFragment {
         super.onDestroyView();
         TrackMapView.onDestroy();
         unbinder.unbind();
+
+        if (mThreed != null) {
+            mThreed.interrupt();
+        }
     }
 
     @Override
@@ -107,6 +141,16 @@ public class TrackMapFragment extends MapFragment {
         locationStyle.strokeColor(Color.parseColor("#00000000"));
 
         mAMap.setMyLocationStyle(locationStyle);
+    }
+
+
+    @Override
+    public void queryTrackPointTables(List<TrackPointTable> trackPointTables) {
+
+    }
+
+    @Override
+    public void refreshLocationPoint(LocationEntity locationEntity) {
 
     }
 

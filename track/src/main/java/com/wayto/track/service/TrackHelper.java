@@ -53,6 +53,8 @@ public class TrackHelper {
      * <p>
      * author: hezhiWu
      * created at 2017/11/27 15:02
+     *
+     * @param trackId
      */
     public int getTrackStatus(long trackId) {
         int status = -1;
@@ -79,6 +81,8 @@ public class TrackHelper {
      * <p>
      * author: hezhiWu
      * created at 2017/11/27 15:04
+     *
+     * @param location
      */
     public long instertTrack(AMapLocation location) {
         ContentValues values = new ContentValues();
@@ -122,6 +126,9 @@ public class TrackHelper {
      * <p>
      * author: hezhiWu
      * created at 2017/11/28 15:34
+     *
+     * @param lng
+     * @param lat
      */
     public long instertTrack(double lng, double lat) {
         ContentValues values = new ContentValues();
@@ -185,8 +192,11 @@ public class TrackHelper {
      * <p>
      * author: hezhiWu
      * created at 2017/11/27 17:33
+     *
+     * @param trackId
+     * @param location
      */
-    public void updateTrack(long trackId, AMapLocation location) {
+    public void updateTrackDistanceSpeed(long trackId, AMapLocation location) {
         if (location == null)
             return;
 
@@ -209,7 +219,7 @@ public class TrackHelper {
 
 
         /*插入轨迹点*/
-        instertTrack(location);
+        insterTrackPoint(trackId, location);
     }
 
     /**
@@ -217,6 +227,8 @@ public class TrackHelper {
      * <p>
      * author: hezhiWu
      * created at 2017/11/27 17:53
+     *
+     * @param trackId
      */
     private TrackTable queryTrack(long trackId) {
         TrackTable table = new TrackTable();
@@ -254,6 +266,9 @@ public class TrackHelper {
      * <p>
      * author: hezhiWu
      * created at 2017/11/27 16:45
+     *
+     * @param trackId
+     * @param status
      */
     public void updateTrackStatus(long trackId, int status) {
         if (trackId <= 0)
@@ -269,6 +284,9 @@ public class TrackHelper {
      * <p>
      * author: hezhiWu
      * created at 2017/11/27 17:31
+     *
+     * @param trackId
+     * @param distance
      */
     private void updateTrackDistance(long trackId, double distance) {
         ContentValues values = new ContentValues();
@@ -293,6 +311,8 @@ public class TrackHelper {
      * <p>
      * author: hezhiWu
      * created at 2017/11/27 18:13
+     *
+     * @param trackId
      */
     public void updateTrackDuration(long trackId) {
         TrackTable table = queryTrack(trackId);
@@ -323,6 +343,9 @@ public class TrackHelper {
     /**
      * author: hezhiWu
      * created at 2017/11/27 16:04
+     *
+     * @param trackId
+     * @param location
      */
     public void insterTrackPoint(long trackId, AMapLocation location) {
         ContentValues values = new ContentValues();

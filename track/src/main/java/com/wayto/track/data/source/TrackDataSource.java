@@ -2,6 +2,7 @@ package com.wayto.track.data.source;
 
 import android.content.Context;
 
+import com.wayto.track.service.data.LocationEntity;
 import com.wayto.track.storage.TrackPointTable;
 
 import java.util.List;
@@ -24,7 +25,11 @@ public interface TrackDataSource {
 
         void onTrackGpsStatues(int status);
 
-        void queryTrackPointTables(List<TrackPointTable> trackPointTables);
+        void onQueryTrackPointTables(List<TrackPointTable> trackPointTables);
+
+        void onRefreshLocationPoint(LocationEntity entity);
+
+        void getTrackStatus(int status);
     }
 
     void onStartTrackGather(Context context);
@@ -34,4 +39,8 @@ public interface TrackDataSource {
     void onContinueTrackGather(Context context);
 
     void onEndTrackGater(Context context);
+
+    void onQueryTrackPoint(Context context, long trackId);
+
+    void onCheckTrack(long trackId);
 }

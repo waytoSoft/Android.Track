@@ -7,13 +7,16 @@ import android.content.Intent;
 import com.wayto.track.DataApplication;
 import com.wayto.track.common.TrackConstant;
 import com.wayto.track.service.data.LocationEntity;
+import com.wayto.track.storage.TrackPointTable;
+import com.wayto.track.storage.TrackPointTableDao;
+import com.wayto.track.storage.TrackTable;
+import com.wayto.track.storage.TrackTableDao;
 import com.wayto.track.utils.IStringUtils;
 
 import java.text.DecimalFormat;
+import java.util.List;
 
-import static com.wayto.track.common.TrackConstant.TRACK_DISTANCE_KEY;
 import static com.wayto.track.common.TrackConstant.TRACK_LOCATION_KEY;
-import static com.wayto.track.common.TrackConstant.TRACK_SPEED_KEY;
 
 /**
  * author: hezhiWu <hezhi.woo@gmail.com>
@@ -24,10 +27,31 @@ import static com.wayto.track.common.TrackConstant.TRACK_SPEED_KEY;
  */
 public class TrackRemote implements TrackDataSource {
 
-    private static TrackCallBack trackPanelCallBack;
+    private static TrackCallBack trackCallBack;
 
     public TrackRemote(TrackCallBack callBack) {
-        this.trackPanelCallBack = callBack;
+        this.trackCallBack = callBack;
+    }
+
+    @Override
+    public void onCheckTrack(long trackId) {
+        List<TrackTable> tables=DataApplication.getInstance().getDaoSession().getTrackTableDao()
+                .queryBuilder()
+                .where(TrackTableDao.Properties.Id.eq(trackId))
+                .list();
+
+        if (tables==null || tables.size()==0)
+            return;
+
+        if (trackCallBack==null)
+            return;
+
+        TrackTable table=tables.get(0);
+
+//        trackCallBack.getTrackStatus(table.getStatus());
+        trackCallBack.getTrackDistance(new DecimalFormat("######0.00").format(table.getDistance() / 1000));
+        trackCallBack.onTrackSpeed(new DecimalFormat("######0.00").format(table.getSpeed()));
+        trackCallBack.onTrackTime(IStringUtils.showTimeCount(table.getDuration()));
     }
 
     @Override
@@ -50,31 +74,46 @@ public class TrackRemote implements TrackDataSource {
         DataApplication.getInstance().destroyServiceGather(context);
     }
 
+    @Override
+    public void onQueryTrackPoint(Context context, long trackId) {
+        List<TrackPointTable> tables = DataApplication.getInstance().getDaoSession().getTrackPointTableDao()
+                .queryBuilder()
+                .where(TrackPointTableDao.Properties.Id.eq(trackId))
+                .list();
+
+        if (trackCallBack != null)
+            trackCallBack.onQueryTrackPointTables(tables);
+    }
+
     public static class TrackBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(TrackConstant.TRACK_REFRESH_VIEW_BROCAST_ACTION)) {
 
-                if (trackPanelCallBack == null)
+                if (trackCallBack == null)
                     return;
 
+                /*Distance*/
                 double distance = intent.getDoubleExtra(TrackConstant.TRACK_DISTANCE_KEY, 0);
-                trackPanelCallBack.getTrackDistance(new DecimalFormat("######0.00").format(distance / 1000));
+                trackCallBack.getTrackDistance(new DecimalFormat("######0.00").format(distance / 1000));
 
+                /*Speed*/
                 float speed = intent.getFloatExtra(TrackConstant.TRACK_SPEED_KEY, 0);
-                trackPanelCallBack.onTrackSpeed(new DecimalFormat("######0.00").format(speed));
+                trackCallBack.onTrackSpeed(new DecimalFormat("######0.00").format(speed));
 
-
+                /*LocationEntity*/
                 LocationEntity locationEntity = (LocationEntity) intent.getSerializableExtra(TRACK_LOCATION_KEY);
                 if (locationEntity != null) {
-                    trackPanelCallBack.onTrackGpsStatues(locationEntity.getGpsAccuracyStatus());
+                    trackCallBack.onTrackGpsStatues(locationEntity.getGpsAccuracyStatus());
+                    trackCallBack.onRefreshLocationPoint(locationEntity);
                 }
-            }else if (intent.getAction().equals(TrackConstant.TRACK_REFRESH_DURATION_BROCAST_ACTION)){
-                if (trackPanelCallBack == null)
+            } else if (intent.getAction().equals(TrackConstant.TRACK_REFRESH_DURATION_BROCAST_ACTION)) {/*时长更新*/
+                if (trackCallBack == null)
                     return;
 
+                /*Duration*/
                 long duration = intent.getLongExtra(TrackConstant.TRACK_DURATION_KEY, 0);
-                trackPanelCallBack.onTrackTime(IStringUtils.showTimeCount(duration));
+                trackCallBack.onTrackTime(IStringUtils.showTimeCount(duration));
             }
         }
     }

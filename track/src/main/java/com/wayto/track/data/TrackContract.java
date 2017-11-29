@@ -1,5 +1,10 @@
 package com.wayto.track.data;
 
+import com.wayto.track.service.data.LocationEntity;
+import com.wayto.track.storage.TrackPointTable;
+
+import java.util.List;
+
 /**
  * author: hezhiWu <hezhi.woo@gmail.com>
  * version: V1.0
@@ -37,13 +42,23 @@ public interface TrackContract {
 
     }
 
+    interface TrackMapView{
+        void queryTrackPointTables(List<TrackPointTable> trackPointTables);
+
+        void refreshLocationPoint(LocationEntity locationEntity);
+    }
+
     interface Present {
-        void onStartTrackGather();
+        void onCheckTrack(long trackId);
+
+        void onStartTrackGather(boolean startTimer);
 
         void onStopTrackGather();
 
         void onContinueTrackGather();
 
         void onEndTrackGater();
+
+        void onQueryTrackPointTables(long trackId);
     }
 }

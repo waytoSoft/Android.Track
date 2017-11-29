@@ -1,7 +1,6 @@
 package com.wayto.track.service;
 
 import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -45,7 +44,7 @@ public class LocationService extends Service implements AMapLocationListener {
     private double mLastLng;
     private double mLastLat;
     private double mDistance;
-    private boolean isFirstLocation = true;
+    private boolean isFirstLocation;
 
     @Nullable
     @Override
@@ -69,11 +68,20 @@ public class LocationService extends Service implements AMapLocationListener {
                 if (mTrackHelper == null)
                     mTrackHelper = new TrackHelper(this);
 
-                //1、创建一条足迹记录[解决定位延时，计算时间不准备问题]
-                if (trackId <= 0) {
-                    trackId = mTrackHelper.instertTrack(0, 0);
+                //1、判断当前TrackId,状态，创建一条足迹记录[解决定位延时，计算时间不准备问题]
+                long tId = mTrackHelper.getTrackId();
+                int status = mTrackHelper.getTrackStatus(tId);
+                if (status == TrackConstant.TRACK_STOP
+                        || status == TrackConstant.TRACK_CONTINUE
+                        || status == TrackConstant.TRACK_START) {
 
-                    isFirstLocation = true;
+                    trackId = tId;
+                } else {
+                    if (trackId <= 0) {
+                        trackId = mTrackHelper.instertTrack(0, 0);
+
+                        isFirstLocation = true;
+                    }
                 }
 
                 //2、启动定位
@@ -86,7 +94,7 @@ public class LocationService extends Service implements AMapLocationListener {
                 stopLocation();
 
                 if (mTrackHelper != null) {
-                    mTrackHelper.updateTrackStatus(trackId, TrackConstant.TRACK_STOP);
+                    mTrackHelper.updateTrackStatus(mTrackHelper.getTrackId(), TrackConstant.TRACK_STOP);
                     mTrackHelper.clearLocationTime();
                 }
 
@@ -94,11 +102,21 @@ public class LocationService extends Service implements AMapLocationListener {
                 IUtils.cancelAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION);
 
             } else if (trackState == TrackConstant.LOCATION_CONTINUE_FLAG) {/*继续*/
-                startLocation();
+                if (mTrackHelper == null)
+                    mTrackHelper = new TrackHelper(this);
 
-                if (mTrackHelper != null) {
-                    mTrackHelper.updateTrackStatus(trackId, TrackConstant.TRACK_CONTINUE);
+                mTrackHelper.updateTrackStatus(mTrackHelper.getTrackId(), TrackConstant.TRACK_CONTINUE);
+
+                long tId = mTrackHelper.getTrackId();
+                int status = mTrackHelper.getTrackStatus(tId);
+                if (status == TrackConstant.TRACK_STOP
+                        || status == TrackConstant.TRACK_CONTINUE
+                        || status == TrackConstant.TRACK_START) {
+
+                    trackId = tId;
                 }
+
+                startLocation();
 
                 /*开启定时提醒*/
                 IUtils.setAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION, 1000);
@@ -107,7 +125,7 @@ public class LocationService extends Service implements AMapLocationListener {
                 destroyLocation();
 
                 if (mTrackHelper != null) {
-                    mTrackHelper.updateTrackStatus(trackId, TrackConstant.TRACK_END);
+                    mTrackHelper.updateTrackStatus(mTrackHelper.getTrackId(), TrackConstant.TRACK_END);
                 }
 
                 /*关闭定时提醒*/
@@ -253,13 +271,8 @@ public class LocationService extends Service implements AMapLocationListener {
 
         //TODO 3、传感器辅助过虑漂移点
 
-        if (trackId == -1) {
-            /*新增Track*/
-            trackId = mTrackHelper.instertTrack(location);
-        } else {
-            /*更新Track表*/
-            mTrackHelper.updateTrack(trackId, location);
-        }
+        /*更新Track表*/
+        mTrackHelper.updateTrackDistanceSpeed(trackId, location);
 
         sendTrackData(this, location);
     }
