@@ -5,6 +5,7 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.location.LocationManager;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -16,6 +17,8 @@ import com.amap.api.location.AMapLocationClientOption;
 import com.amap.api.location.AMapLocationListener;
 import com.amap.api.maps.AMapUtils;
 import com.amap.api.maps.model.LatLng;
+import com.wayto.track.R;
+import com.wayto.track.TrackActivity;
 import com.wayto.track.common.SharedPreferencesUtils;
 import com.wayto.track.common.TrackConstant;
 import com.wayto.track.service.data.LocationEntity;
@@ -90,6 +93,9 @@ public class LocationService extends Service implements AMapLocationListener {
                 //3、开户定时提醒
                 IUtils.setAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION, 1000);
 
+                /*开启前台服务*/
+                startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "足迹采集", "路径采集中", R.mipmap.ic_launcher_round, TrackActivity.class));
+
             } else if (trackState == TrackConstant.LOCATION_STOP_FLAG) {/*停止*/
                 stopLocation();
 
@@ -100,6 +106,9 @@ public class LocationService extends Service implements AMapLocationListener {
 
                 /*关闭定时提醒*/
                 IUtils.cancelAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION);
+
+                /*开启前台服务*/
+                startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "足迹采集", "路径采集停止", R.mipmap.ic_launcher_round, TrackActivity.class));
 
             } else if (trackState == TrackConstant.LOCATION_CONTINUE_FLAG) {/*继续*/
                 if (mTrackHelper == null)
@@ -121,6 +130,9 @@ public class LocationService extends Service implements AMapLocationListener {
                 /*开启定时提醒*/
                 IUtils.setAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION, 1000);
 
+                /*开启前台服务*/
+                startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "足迹采集", "路径采集中", R.mipmap.ic_launcher_round, TrackActivity.class));
+
             } else if (trackState == TrackConstant.LOCATION_DESTROY_FLAG) {/*结束*/
                 destroyLocation();
 
@@ -133,6 +145,9 @@ public class LocationService extends Service implements AMapLocationListener {
 
                 /*注销数据*/
                 destoryTrackData();
+
+                /*退出前台服务*/
+                stopForeground(true);
             }
         } catch (Exception e) {
             e.printStackTrace();

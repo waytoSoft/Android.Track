@@ -5,6 +5,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
+import android.widget.Toast;
 
 import com.amap.api.location.AMapLocation;
 import com.amap.api.maps.AMapUtils;
@@ -199,6 +201,14 @@ public class TrackHelper {
     public void updateTrackDistanceSpeed(long trackId, AMapLocation location) {
         if (location == null)
             return;
+
+
+        /*处理系统回收APP,距离异常的情况*/
+        if (mLastLng <= 0 || mLastLat <= 0) {
+            mLastLng = location.getLongitude();
+            mLastLat = location.getLatitude();
+            return;
+        }
 
         TrackTable table = queryTrack(trackId);
 

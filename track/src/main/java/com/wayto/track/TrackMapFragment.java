@@ -3,6 +3,7 @@ package com.wayto.track;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,6 +41,7 @@ import butterknife.Unbinder;
  * Copyright (c) 2017 Shenzhen O&M Cloud Co., Ltd. All rights reserved.
  */
 public class TrackMapFragment extends MapFragment implements TrackContract.TrackMapView {
+    private final String TAG=getClass().getSimpleName();
 
     @BindView(R.id.Track_MapView)
     MapView TrackMapView;
@@ -146,7 +148,10 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
 
     @Override
     public void queryTrackPointTables(List<TrackPointTable> trackPointTables) {
+        if (trackPointTables==null)
+            return;
 
+        Log.d(TAG,"trackTable size="+trackPointTables.size());
     }
 
     @Override

@@ -40,7 +40,7 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
     public TrackPresent(Activity activity, TrackContract.TrackMapView trackMapView) {
         this.mActivity = activity;
         this.mTrackMapView = trackMapView;
-        if (mTrackMapView == null)
+        if (mTrackRemote == null)
             this.mTrackRemote = new TrackRemote(this);
     }
 

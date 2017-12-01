@@ -1,9 +1,12 @@
 package com.wayto.track.utils;
 
 import android.app.AlarmManager;
+import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
+import android.support.v7.app.NotificationCompat;
 
 /**
  * author: hezhiWu <hezhi.woo@gmail.com>
@@ -46,5 +49,28 @@ public class IUtils {
         Intent intent = new Intent(action);
         PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         aManager.cancel(pi);
+    }
+
+    /**
+     * 创建前台Notification
+     * <p>
+     * author: hezhiWu
+     * created at 2017/3/15 10:26
+     *
+     * @param context
+     * @param contentTitle
+     * @param contentText
+     * @param launcherRes
+     * @param cls          跳转目标
+     */
+    public static Notification CreateForegroundNotification(Context context, String contentTitle, String contentText, int launcherRes, Class<?> cls) {
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context);
+        Intent intent = new Intent(context.getApplicationContext(), cls);
+        mBuilder.setContentTitle(contentTitle)
+                .setContentText(contentText)
+                .setLargeIcon(BitmapFactory.decodeResource(context.getResources(), launcherRes)) // 设置下拉列表中的图标(大图标)
+                .setSmallIcon(launcherRes)
+                .setContentIntent(PendingIntent.getActivity(context, 0, intent, 0));//设置通知小ICON
+        return mBuilder.build();
     }
 }
