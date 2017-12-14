@@ -52,7 +52,7 @@ public interface TrackContract {
 
         void drawableStartPoint(double lat, double lng);
 
-        void drawableEndPoint(double lat, double lng);
+        void removeMapView();
     }
 
     interface Presenter extends BasePresenter {

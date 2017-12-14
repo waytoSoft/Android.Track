@@ -34,6 +34,8 @@ public class TrackActivity extends AppCompatActivity implements TrackContract.Tr
 
     private TrackPresenter trackPresent;
 
+    private int fragmentFlag = TrackConstant.TRACK_PANEL_FRAGMENT;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,9 +102,10 @@ public class TrackActivity extends AppCompatActivity implements TrackContract.Tr
 
     @Override
     public void onSwitchFragment(int flag) {
-        if (flag==TrackConstant.TRACK_PANEL_FRAGMENT){
+        fragmentFlag = flag;
+        if (flag == TrackConstant.TRACK_PANEL_FRAGMENT) {
             switchFragment(mTrackPanelFragment, mTrackMapFragment);
-        }else if (flag==TrackConstant.TRACK_MAP_FRAGMENT){
+        } else if (flag == TrackConstant.TRACK_MAP_FRAGMENT) {
             switchFragment(mTrackMapFragment, mTrackPanelFragment);
         }
     }
@@ -110,7 +113,13 @@ public class TrackActivity extends AppCompatActivity implements TrackContract.Tr
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
-            this.finish();
+            if (fragmentFlag == TrackConstant.TRACK_MAP_FRAGMENT) {
+                switchFragment(mTrackPanelFragment, mTrackMapFragment);
+                fragmentFlag=TrackConstant.TRACK_PANEL_FRAGMENT;
+
+                return true;
+            } else
+                this.finish();
         }
         return super.onKeyDown(keyCode, event);
     }

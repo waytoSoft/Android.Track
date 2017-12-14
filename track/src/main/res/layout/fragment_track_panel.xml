@@ -50,8 +50,8 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_above="@+id/Track_Panel_center_layout"
-            android:layout_below="@+id/Track_Panel_Title_layout"
+            android:layout_above="@id/Track_Panel_center_layout"
+            android:layout_below="@id/Track_Panel_Title_layout"
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true"
             android:gravity="center">
@@ -99,14 +99,14 @@
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
                 android:padding="15dp"
-                android:src="@mipmap/icon_track_panel_map" />
+                android:src="@drawable/track_panel_map_selector" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_centerVertical="true"
                 android:layout_marginRight="-10dp"
-                android:layout_toLeftOf="@+id/Track_Panel_Map_ImageView"
+                android:layout_toLeftOf="@id/Track_Panel_Map_ImageView"
                 android:background="#D2D2D2" />
 
             <TextView
@@ -114,7 +114,7 @@
                 android:layout_height="1dp"
                 android:layout_centerVertical="true"
                 android:layout_marginLeft="-10dp"
-                android:layout_toRightOf="@+id/Track_Panel_Map_ImageView"
+                android:layout_toRightOf="@id/Track_Panel_Map_ImageView"
                 android:background="#D2D2D2" />
 
         </RelativeLayout>
@@ -123,7 +123,7 @@
             android:id="@+id/Track_Panel_Dis_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/Track_Panel_center_layout"
+            android:layout_below="@id/Track_Panel_center_layout"
             android:layout_marginTop="10dp"
             android:paddingLeft="35dp"
             android:paddingRight="35dp">

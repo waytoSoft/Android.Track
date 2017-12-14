@@ -60,7 +60,15 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
 
     //实线集合
     private List<PolylineOptions> mTrackSolidArrowLineList = new ArrayList<>();
-    private List<PolylineOptions> mTrackDotLineList = new ArrayList<>();//虚线集合
+
+    //虚线集合
+    private List<PolylineOptions> mTrackDotLineList = new ArrayList<>();
+
+    //临时点集合
+    private List<LatLng> tempLatLngs = new ArrayList<>();
+
+    //最后一个点
+    private LatLng lastLatLng;
 
     private long trackId;
 
@@ -148,7 +156,6 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
         mAMap.moveCamera(new CameraUpdateFactory().zoomTo(16));
     }
 
-
     @Override
     public void setmPresenter(TrackContract.Presenter mPresenter) {
         this.mPresenter = mPresenter;
@@ -159,7 +166,8 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
         if (trackPointTables == null || trackPointTables.size() == 0)
             return;
 
-        drawablePointMarker(trackPointTables.get(0).getLongitude(), trackPointTables.get(0).getLatitude(), R.mipmap.icon_track_start);
+        lastLatLng = new LatLng(trackPointTables.get(trackPointTables.size() - 1).getLatitude(),
+                trackPointTables.get(trackPointTables.size() - 1).getLongitude());
 
         createPolyline(trackPointTables);
 
@@ -178,7 +186,22 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
 
     @Override
     public void refreshLocationPoint(LocationEntity locationEntity) {
+        if (lastLatLng == null) {
+            lastLatLng = new LatLng(locationEntity.getLatitude(), locationEntity.getLongitude());
+        } else {
+            LatLng latLng = new LatLng(locationEntity.getLatitude(), locationEntity.getLongitude());
 
+            tempLatLngs.add(lastLatLng);
+            tempLatLngs.add(latLng);
+
+            String tempColor = "#66FFFF";
+            double distance = AMapUtils.calculateLineDistance(lastLatLng, latLng);
+            if (distance > 1000) {
+                tempColor = "#CCCCCC";
+            }
+
+            addPolyLine(createPolyLineOption(tempLatLngs, 10, Color.parseColor(tempColor)));
+        }
     }
 
     @Override
@@ -187,8 +210,8 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
     }
 
     @Override
-    public void drawableEndPoint(double lat, double lng) {
-        drawablePointMarker(lng, lat, R.mipmap.icon_track_end);
+    public void removeMapView() {
+        mAMap.clear();
     }
 
     @OnClick({R.id.Track_Map_back_Layout, R.id.Track_Map_Location_Layout})
@@ -267,7 +290,8 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
         }
     }
 
-    /**r
+    /**
+     * r
      * 创建线段
      * <p>
      * author: hezhiWu

@@ -155,6 +155,9 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
         if (mActivity == null || mActivity.isFinishing())
             return;
 
+        if (mTrackMapView!=null)
+            mTrackMapView.removeMapView();
+
         status = TrackConstant.TRACK_STOP;
 
         mTrackPanelView.onTrackStartButtonVisibility(View.GONE);
@@ -163,6 +166,10 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
         mTrackPanelView.onTrackEndButtonVisibility(View.VISIBLE);
 
         mTrackRemote.onStopTrackGather(mActivity);
+
+        //reset Data
+        startPointLat=0;
+        startPointLng=0;
     }
 
     @Override
@@ -255,15 +262,17 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
         if (mTrackMapView == null)
             return;
 
-        if (entity != null) {
-            startPointLng = entity.getLongitude();
-            startPointLat = entity.getLatitude();
-        }
+        if (startPointLng == 0 && startPointLat == 0) {
+            if (entity != null) {
+                startPointLng = entity.getLongitude();
+                startPointLat = entity.getLatitude();
+            }
 
-        if (status == TrackConstant.TRACK_START
-                && startPointLng > 0
-                && startPointLat > 0) {
-            mTrackMapView.drawableStartPoint(startPointLat, startPointLng);
+            if (status == TrackConstant.TRACK_START
+                    && startPointLng > 0
+                    && startPointLat > 0) {
+                mTrackMapView.drawableStartPoint(startPointLat, startPointLng);
+            }
         }
 
         mTrackMapView.refreshLocationPoint(entity);

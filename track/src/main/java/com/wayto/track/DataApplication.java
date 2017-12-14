@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 
+import com.squareup.leakcanary.LeakCanary;
 import com.wayto.track.common.SharedPreferencesUtils;
 import com.wayto.track.common.TrackConstant;
 import com.wayto.track.service.LocationService;
@@ -33,6 +34,14 @@ public class DataApplication extends Application {
     public void onCreate() {
         super.onCreate();
         instance = this;
+
+        if (LeakCanary.isInAnalyzerProcess(this)) {
+            // This process is dedicated to LeakCanary for heap analysis.
+            // You should not init your app in this process.
+            return;
+        }
+        LeakCanary.install(this);
+
 
         initDB();
     }
