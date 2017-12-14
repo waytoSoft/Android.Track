@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
+import com.amap.api.maps.model.PolylineOptions;
 import com.wayto.track.DataApplication;
 import com.wayto.track.common.TrackConstant;
 import com.wayto.track.service.data.LocationEntity;
@@ -14,6 +15,7 @@ import com.wayto.track.storage.TrackTableDao;
 import com.wayto.track.utils.IStringUtils;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.wayto.track.common.TrackConstant.TRACK_LOCATION_KEY;
@@ -28,6 +30,8 @@ import static com.wayto.track.common.TrackConstant.TRACK_LOCATION_KEY;
 public class TrackRemote implements TrackDataSource {
 
     private static TrackCallBack trackCallBack;
+
+
 
     public TrackRemote(TrackCallBack callBack) {
         this.trackCallBack = callBack;
@@ -78,7 +82,7 @@ public class TrackRemote implements TrackDataSource {
     public void onQueryTrackPoint(Context context, long trackId) {
         List<TrackPointTable> tables = DataApplication.getInstance().getDaoSession().getTrackPointTableDao()
                 .queryBuilder()
-                .where(TrackPointTableDao.Properties.Id.eq(trackId))
+                .where(TrackPointTableDao.Properties.TarckTableId.eq(trackId))
                 .list();
 
         if (trackCallBack != null)

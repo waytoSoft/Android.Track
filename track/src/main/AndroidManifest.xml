@@ -37,11 +37,11 @@
 
         <provider
             android:name=".provider.TrackProvider"
-            android:authorities="com.wayto.track" />
+            android:authorities="com.wayto.independent.track" />
 
         <provider
             android:name=".provider.TrackPointProvider"
-            android:authorities="com.wayto.trackPoint" />
+            android:authorities="com.wayto.independent.trackPoint" />
 
         <receiver android:name=".data.source.TrackRemote$TrackBroadcastReceiver">
             <intent-filter>
@@ -52,7 +52,7 @@
 
         <receiver android:name=".service.LocationService$TrackAlarReceiver">
             <intent-filter>
-                <action android:name="com.wayto.alarm.action"/>
+                <action android:name="com.wayto.track.service.alarm"/>
             </intent-filter>
         </receiver>
 

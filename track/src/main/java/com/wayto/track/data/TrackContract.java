@@ -14,8 +14,11 @@ import java.util.List;
  */
 public interface TrackContract {
 
-    interface TrackPanelView {
+    interface TrackMainView{
+        void onSwitchFragment(int flag);
+    }
 
+    interface TrackPanelView extends BaseView<Presenter> {
         void onCountDownViewVisibility(int visibility);
 
         void showCountDownViewNumber(int number);
@@ -42,13 +45,20 @@ public interface TrackContract {
 
     }
 
-    interface TrackMapView{
+    interface TrackMapView extends BaseView<Presenter> {
         void queryTrackPointTables(List<TrackPointTable> trackPointTables);
 
         void refreshLocationPoint(LocationEntity locationEntity);
+
+        void drawableStartPoint(double lat, double lng);
+
+        void drawableEndPoint(double lat, double lng);
     }
 
-    interface Present {
+    interface Presenter extends BasePresenter {
+
+        void onSwitchFragment(int flag);
+
         void onCheckTrack(long trackId);
 
         void onStartTrackGather(boolean startTimer);

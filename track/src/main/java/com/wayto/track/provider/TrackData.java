@@ -27,7 +27,7 @@ public final class TrackData {
      * Copyright (c) 2017 Shenzhen O&M Cloud Co., Ltd. All rights reserved.
      */
     public static final class Track {
-        public static final String AUTHORITY = "com.wayto.track";
+        public static final String AUTHORITY = "com.wayto.independent.track";
 
         private static final String CONTENT_AUTHORITY_SLASH = "content://" + AUTHORITY + "/";
 
@@ -89,7 +89,7 @@ public final class TrackData {
      * Copyright (c) 2017 Shenzhen O&M Cloud Co., Ltd. All rights reserved.
      */
     public static final class TrackPoint {
-        public static final String AUTHORITY = "com.wayto.trackPoint";
+        public static final String AUTHORITY = "com.wayto.independent.trackPoint";
 
         private static final String CONTENT_AUTHORITY_SLASH = "content://" + AUTHORITY + "/";
 

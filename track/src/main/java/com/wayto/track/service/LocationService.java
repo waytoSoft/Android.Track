@@ -1,11 +1,9 @@
 package com.wayto.track.service;
 
-import android.app.AlarmManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.location.LocationManager;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -23,6 +21,9 @@ import com.wayto.track.common.SharedPreferencesUtils;
 import com.wayto.track.common.TrackConstant;
 import com.wayto.track.service.data.LocationEntity;
 import com.wayto.track.utils.IUtils;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * 定位服务[独立进程]
@@ -48,6 +49,9 @@ public class LocationService extends Service implements AMapLocationListener {
     private double mLastLat;
     private double mDistance;
     private boolean isFirstLocation;
+
+    private Timer mTimer;
+    private TrackTimerTask mTrackTimerTask;
 
     @Nullable
     @Override
@@ -91,7 +95,8 @@ public class LocationService extends Service implements AMapLocationListener {
                 startLocation();
 
                 //3、开户定时提醒
-                IUtils.setAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION, 1000);
+                //IUtils.setAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION, 1000);
+                startTimer();
 
                 /*开启前台服务*/
                 startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "足迹采集", "路径采集中", R.mipmap.ic_launcher_round, TrackActivity.class));
@@ -105,7 +110,8 @@ public class LocationService extends Service implements AMapLocationListener {
                 }
 
                 /*关闭定时提醒*/
-                IUtils.cancelAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION);
+                //IUtils.cancelAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION);
+                cancelTimer();
 
                 /*开启前台服务*/
                 startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "足迹采集", "路径采集停止", R.mipmap.ic_launcher_round, TrackActivity.class));
@@ -128,7 +134,8 @@ public class LocationService extends Service implements AMapLocationListener {
                 startLocation();
 
                 /*开启定时提醒*/
-                IUtils.setAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION, 1000);
+                //IUtils.setAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION, 1000);
+                startTimer();
 
                 /*开启前台服务*/
                 startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "足迹采集", "路径采集中", R.mipmap.ic_launcher_round, TrackActivity.class));
@@ -141,7 +148,8 @@ public class LocationService extends Service implements AMapLocationListener {
                 }
 
                 /*关闭定时提醒*/
-                IUtils.cancelAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION);
+                //IUtils.cancelAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION);
+                cancelTimer();
 
                 /*注销数据*/
                 destoryTrackData();
@@ -243,6 +251,42 @@ public class LocationService extends Service implements AMapLocationListener {
         mLastLng = 0;
         mLastLat = 0;
         mDistance = 0;
+    }
+
+    /**
+     * 启动定时器
+     * <p>
+     * author: hezhiWu
+     * created at 2017/12/13 12:02
+     */
+    private void startTimer() {
+        cancelTimer();
+
+        if (mTimer == null)
+            mTimer = new Timer();
+
+        if (mTrackTimerTask == null)
+            mTrackTimerTask = new TrackTimerTask();
+
+        mTimer.schedule(mTrackTimerTask, 0, 1000);
+    }
+
+    /**
+     * 取消定时器
+     * <p>
+     * author: hezhiWu
+     * created at 2017/12/13 12:02
+     */
+    private void cancelTimer() {
+        if (mTimer != null) {
+            mTimer.cancel();
+            mTimer = null;
+        }
+
+        if (mTrackTimerTask != null) {
+            mTrackTimerTask.cancel();
+            mTrackTimerTask = null;
+        }
     }
 
     @Override
@@ -349,6 +393,13 @@ public class LocationService extends Service implements AMapLocationListener {
         return aMapLocation;
     }
 
+    /**
+     * 定时任务接收器，对于有些手机产商修改AlarmManager定时任务延后的原因，不建议使用AlarmManager做定时任务
+     * <p>
+     * author: hezhiWu
+     * created at 2017/12/13 11:51
+     */
+    @Deprecated
     public static class TrackAlarReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -364,6 +415,28 @@ public class LocationService extends Service implements AMapLocationListener {
                 intent1.putExtra(TrackConstant.TRACK_DURATION_KEY, mTrackHelper.getDuration());
                 context.sendBroadcast(intent1);
             }
+        }
+    }
+
+    /**
+     * Create the TimerTask
+     * <p>
+     * author: hezhiWu
+     * created at 2017/12/13 11:58
+     */
+    class TrackTimerTask extends TimerTask {
+        @Override
+        public void run() {
+            if (mTrackHelper == null)
+                mTrackHelper = new TrackHelper(getApplicationContext());
+
+            Log.d("LocationService", "alar");
+
+            mTrackHelper.updateTrackDuration(trackId);
+
+            Intent intent1 = new Intent(TrackConstant.TRACK_REFRESH_DURATION_BROCAST_ACTION);
+            intent1.putExtra(TrackConstant.TRACK_DURATION_KEY, mTrackHelper.getDuration());
+            getApplication().sendBroadcast(intent1);
         }
     }
 }

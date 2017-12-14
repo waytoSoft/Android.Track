@@ -1,6 +1,8 @@
 package com.wayto.track.data;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.support.annotation.NonNull;
 import android.view.View;
 
 import com.wayto.track.common.TrackConstant;
@@ -13,6 +15,8 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static android.support.v4.util.Preconditions.checkNotNull;
+
 /**
  * author: hezhiWu <hezhi.woo@gmail.com>
  * version: V1.0
@@ -20,9 +24,12 @@ import java.util.TimerTask;
  * <p>
  * Copyright (c) 2017 Shenzhen O&M Cloud Co., Ltd. All rights reserved.
  */
-public class TrackPresent implements TrackContract.Present, TrackDataSource.TrackCallBack {
+@SuppressLint("RestrictedApi")
+public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.TrackCallBack {
 
     private Activity mActivity;
+
+    private TrackContract.TrackMainView mTrackMainView;
     private TrackContract.TrackPanelView mTrackPanelView;
     private TrackContract.TrackMapView mTrackMapView;
     private TrackRemote mTrackRemote;
@@ -31,17 +38,39 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
     private TrackPanelTask trackPanelTask;
     private int indext = 3;
 
-    public TrackPresent(Activity activity, TrackContract.TrackPanelView trackPanelView) {
-        this.mActivity = activity;
-        this.mTrackPanelView = trackPanelView;
-        this.mTrackRemote = new TrackRemote(this);
+    private double startPointLng, startPointLat;
+
+    private int status = -1;
+
+    public TrackPresenter(Activity activity, @NonNull TrackContract.TrackMainView trackMainView, @NonNull TrackContract.TrackPanelView trackPanelView, @NonNull TrackContract.TrackMapView trackMapView) {
+        mActivity = checkNotNull(activity);
+        mTrackMainView = checkNotNull(trackMainView, "trackMainView cannot be null");
+        mTrackPanelView = checkNotNull(trackPanelView, "trackPanelView cannot be null");
+        mTrackMapView = checkNotNull(trackMapView, "trackMapView cannot be null");
+
+        mTrackPanelView.setmPresenter(this);
+        mTrackMapView.setmPresenter(this);
+
+        mTrackRemote = new TrackRemote(this);
     }
 
-    public TrackPresent(Activity activity, TrackContract.TrackMapView trackMapView) {
-        this.mActivity = activity;
-        this.mTrackMapView = trackMapView;
-        if (mTrackRemote == null)
-            this.mTrackRemote = new TrackRemote(this);
+    @Override
+    public void dettach() {
+        mTrackPanelView = null;
+        mTrackMapView = null;
+    }
+
+    @Override
+    public void destroy() {
+        mActivity = null;
+    }
+
+    @Override
+    public void onSwitchFragment(int flag) {
+        if (mTrackMainView == null)
+            return;
+
+        mTrackMainView.onSwitchFragment(flag);
     }
 
     @Override
@@ -83,6 +112,11 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
         if (mTrackPanelView == null)
             return;
 
+        if (mActivity == null || mActivity.isFinishing())
+            return;
+
+        status = TrackConstant.TRACK_START;
+
         if (startTimer) {
             startTimer();
         } else {
@@ -100,6 +134,11 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
         if (mTrackPanelView == null)
             return;
 
+        if (mActivity == null || mActivity.isFinishing())
+            return;
+
+        status = TrackConstant.TRACK_CONTINUE;
+
         mTrackPanelView.onTrackStartButtonVisibility(View.GONE);
         mTrackPanelView.onTrackContinueButtonVisibility(View.GONE);
         mTrackPanelView.onTrackEndButtonVisibility(View.GONE);
@@ -113,6 +152,11 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
         if (mTrackPanelView == null)
             return;
 
+        if (mActivity == null || mActivity.isFinishing())
+            return;
+
+        status = TrackConstant.TRACK_STOP;
+
         mTrackPanelView.onTrackStartButtonVisibility(View.GONE);
         mTrackPanelView.onTrackStopButtonVisibility(View.GONE);
         mTrackPanelView.onTrackContinueButtonVisibility(View.VISIBLE);
@@ -125,6 +169,11 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
     public void onEndTrackGater() {
         if (mTrackPanelView == null)
             return;
+
+        if (mActivity == null || mActivity.isFinishing())
+            return;
+
+        status = TrackConstant.TRACK_END;
 
         mTrackPanelView.onTrackStopButtonVisibility(View.GONE);
         mTrackPanelView.onTrackEndButtonVisibility(View.GONE);
@@ -140,6 +189,9 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
         if (mTrackRemote == null)
             return;
 
+        if (mActivity == null || mActivity.isFinishing())
+            return;
+
         mTrackRemote.onQueryTrackPoint(mActivity, trackId);
     }
 
@@ -148,12 +200,18 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
         if (mTrackPanelView == null)
             return;
 
+        if (mActivity == null || mActivity.isFinishing())
+            return;
+
         mTrackPanelView.onShowTrackDistance(distance);
     }
 
     @Override
     public void onTrackTime(String time) {
         if (mTrackPanelView == null)
+            return;
+
+        if (mActivity == null || mActivity.isFinishing())
             return;
 
         mTrackPanelView.onShowTrackTime(time);
@@ -180,6 +238,15 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
         if (mTrackMapView == null)
             return;
 
+        if (trackPointTables != null && trackPointTables.size() > 0) {
+            startPointLat = trackPointTables.get(0).getLatitude();
+            startPointLng = trackPointTables.get(0).getLongitude();
+        }
+
+        if (startPointLat > 0 && startPointLng > 0) {
+            mTrackMapView.drawableStartPoint(startPointLat, startPointLng);
+        }
+
         mTrackMapView.queryTrackPointTables(trackPointTables);
     }
 
@@ -187,6 +254,17 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
     public void onRefreshLocationPoint(LocationEntity entity) {
         if (mTrackMapView == null)
             return;
+
+        if (entity != null) {
+            startPointLng = entity.getLongitude();
+            startPointLat = entity.getLatitude();
+        }
+
+        if (status == TrackConstant.TRACK_START
+                && startPointLng > 0
+                && startPointLat > 0) {
+            mTrackMapView.drawableStartPoint(startPointLat, startPointLng);
+        }
 
         mTrackMapView.refreshLocationPoint(entity);
     }
@@ -198,6 +276,9 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
      * created at 2017/9/10 上午11:23
      */
     private void startTimer() {
+        if (mActivity == null || mActivity.isFinishing())
+            return;
+
         if (mTimer == null)
             mTimer = new Timer();
 
@@ -208,9 +289,9 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
                 mTrackPanelView.onCountDownViewVisibility(View.VISIBLE);
                 mTrackPanelView.onTrackPanelActionLayoutVisibility(View.GONE);
             }
-
-            mTimer.schedule(trackPanelTask, 0, 1000);
         }
+
+        mTimer.schedule(trackPanelTask, 0, 1000);
     }
 
     /**
@@ -229,20 +310,26 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
             trackPanelTask.cancel();
             trackPanelTask = null;
         }
+
         indext = 3;
     }
 
-
+    /**
+     * Create TimerTask
+     * <p>
+     * author: hezhiWu
+     * created at 2017/12/13 11:28
+     */
     class TrackPanelTask extends TimerTask {
         @Override
         public void run() {
-            mActivity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (indext == 0) {
-                        cancelTimer();
+            if (indext == 0) {
+                cancelTimer();
 
-                        if (mTrackPanelView != null) {
+                if (mTrackPanelView != null) {
+                    mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
                             mTrackPanelView.onTrackStartButtonVisibility(View.GONE);
                             mTrackPanelView.onTrackStopButtonVisibility(View.VISIBLE);
                             mTrackPanelView.onTrackContinueButtonVisibility(View.GONE);
@@ -251,17 +338,23 @@ public class TrackPresent implements TrackContract.Present, TrackDataSource.Trac
                             mTrackPanelView.onCountDownViewVisibility(View.GONE);
                             mTrackPanelView.onTrackPanelActionLayoutVisibility(View.VISIBLE);
                         }
-                    }
+                    });
+                }
+            }
 
-                    /*提前1秒调用,解决定时延迟问题*/
-                    if (indext == 1 && mTrackRemote != null) {
-                        mTrackRemote.onStartTrackGather(mActivity);
-                    }
+             /*提前1秒调用,解决定时延迟问题*/
+            if (indext == 1 && mTrackRemote != null) {
+                mTrackRemote.onStartTrackGather(mActivity);
+            }
 
+            mActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
                     mTrackPanelView.showCountDownViewNumber(indext);
-                    indext--;
                 }
             });
+
+            indext--;
         }
     }
 }

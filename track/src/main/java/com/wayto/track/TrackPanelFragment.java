@@ -11,12 +11,8 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.wayto.track.common.NoticeEvent;
 import com.wayto.track.common.TrackConstant;
 import com.wayto.track.data.TrackContract;
-import com.wayto.track.data.TrackPresent;
-
-import org.greenrobot.eventbus.EventBus;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -58,9 +54,17 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
     TextView TrackPanelTimerTextView;
     Unbinder unbinder;
 
-    private TrackPresent trackPresent;
+    private TrackContract.Presenter mPresenter;
     private long trackId;
     private int status;
+
+    public TrackPanelFragment() {
+
+    }
+
+    public static TrackPanelFragment newInstance() {
+        return new TrackPanelFragment();
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -74,8 +78,7 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_track_panel, null);
         unbinder = ButterKnife.bind(this, view);
-        trackPresent = new TrackPresent(getActivity(), this);
-        trackPresent.onCheckTrack(trackId);
+        mPresenter.onCheckTrack(trackId);
         initUI();
         return view;
     }
@@ -84,6 +87,8 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
     public void onDestroyView() {
         super.onDestroyView();
         unbinder.unbind();
+
+        mPresenter.dettach();
     }
 
     /**
@@ -94,13 +99,11 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
      */
     private void initUI() {
         if (status == TrackConstant.TRACK_START) {
-            trackPresent.onStartTrackGather(false);
+            mPresenter.onStartTrackGather(false);
         } else if (status == TrackConstant.TRACK_STOP) {
-            trackPresent.onStopTrackGather();
+            mPresenter.onStopTrackGather();
         } else if (status == TrackConstant.TRACK_CONTINUE) {
-            trackPresent.onContinueTrackGather();
-        } else if (status == TrackConstant.TRACK_END) {
-            trackPresent.onEndTrackGater();
+            mPresenter.onContinueTrackGather();
         }
     }
 
@@ -113,78 +116,60 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
             case R.id.Track_Panel_history_ImageView:/*历史*/
                 break;
             case R.id.Track_Panel_Map_ImageView:/*切换地图模式*/
-                NoticeEvent event = new NoticeEvent();
-                event.setWhat(TrackConstant.TRACK_MAP_MODE);
-                EventBus.getDefault().post(event);
+                mPresenter.onSwitchFragment(TrackConstant.TRACK_MAP_FRAGMENT);
                 break;
             case R.id.Track_start_button:/*开始*/
-                trackPresent.onStartTrackGather(true);
+                mPresenter.onStartTrackGather(true);
                 break;
             case R.id.Track_stop_button:/*停止*/
-                trackPresent.onStopTrackGather();
+                mPresenter.onStopTrackGather();
                 break;
             case R.id.Track_continue_button:/*继续*/
-                trackPresent.onContinueTrackGather();
+                mPresenter.onContinueTrackGather();
                 break;
             case R.id.Track_end_button:/*结束*/
-                trackPresent.onEndTrackGater();
+                mPresenter.onEndTrackGater();
                 break;
         }
     }
 
     @Override
-    public void onCountDownViewVisibility(int visibility) {
-        if (TrackPanelTimerTextView == null)
-            return;
+    public void setmPresenter(TrackContract.Presenter mPresenter) {
+        this.mPresenter = mPresenter;
+    }
 
+    @Override
+    public void onCountDownViewVisibility(int visibility) {
         TrackPanelTimerTextView.setVisibility(visibility);
     }
 
     @Override
     public void showCountDownViewNumber(final int number) {
-        if (TrackPanelTimerTextView == null)
-            return;
-
         TrackPanelTimerTextView.setText(String.valueOf(number));
     }
 
     @Override
     public void onTrackPanelActionLayoutVisibility(int visibility) {
-        if (TrackPanelActionLayout == null)
-            return;
-
         TrackPanelActionLayout.setVisibility(visibility);
     }
 
     @Override
     public void onTrackStartButtonVisibility(int visibility) {
-        if (TrackStartButton == null)
-            return;
-
         TrackStartButton.setVisibility(visibility);
     }
 
     @Override
     public void onTrackContinueButtonVisibility(int visibility) {
-        if (TrackContinueButton == null)
-            return;
-
         TrackContinueButton.setVisibility(visibility);
     }
 
     @Override
     public void onTrackStopButtonVisibility(int visibility) {
-        if (TrackStopButton == null)
-            return;
-
         TrackStopButton.setVisibility(visibility);
     }
 
     @Override
     public void onTrackEndButtonVisibility(int visibility) {
-        if (TrackEndButton == null)
-            return;
-
         TrackEndButton.setVisibility(visibility);
     }
 
@@ -197,25 +182,16 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
 
     @Override
     public void onShowTrackDistance(String distance) {
-        if (TrackPanelDistance == null)
-            return;
-
         TrackPanelDistance.setText(distance);
     }
 
     @Override
     public void onShowTrackSpeed(String speed) {
-        if (TrackPanelSpeed == null)
-            return;
-
         TrackPanelSpeed.setText(speed);
     }
 
     @Override
     public void onShowTrackTime(String time) {
-        if (TrackPanelTime == null)
-            return;
-
         TrackPanelTime.setText(time);
     }
 

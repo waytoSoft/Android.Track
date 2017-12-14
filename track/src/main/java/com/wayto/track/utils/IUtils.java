@@ -28,10 +28,11 @@ public class IUtils {
      * @param action
      * @param triggerAtMillis
      */
+    @Deprecated
     public static void setAlarm(Context context, AlarmManager aManager, String action, long triggerAtMillis) {
         Intent intent = new Intent(action);
-        PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        aManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(),triggerAtMillis, pi);
+        PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+        aManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), triggerAtMillis, pi);
     }
 
 
@@ -45,9 +46,10 @@ public class IUtils {
      * @param aManager
      * @param action
      */
+    @Deprecated
     public static void cancelAlarm(Context context, AlarmManager aManager, String action) {
         Intent intent = new Intent(action);
-        PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
         aManager.cancel(pi);
     }
 

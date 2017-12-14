@@ -16,9 +16,12 @@ public class TrackConstant {
     public static final String TRACK_STATUS_KEY = "track_status";
     public static final String TRACK_DISTANCE_KEY = "track_distance";
     public static final String TRACK_SPEED_KEY = "track_speed";
-    public static final String TRACK_DURATION_KEY="track_duration";
+    public static final String TRACK_DURATION_KEY = "track_duration";
     public static final String TRACK_LOCATION_KEY = "track_location";
-    public static final String TRACK_ALARM_ACTION="com.wayto.alarm.action";
+    public static final String TRACK_ALARM_ACTION = "com.wayto.track.service.alarm";
+
+    public static final int TRACK_PANEL_FRAGMENT = 1;
+    public static final int TRACK_MAP_FRAGMENT = 2;
 
     /*切换面板模式Key*/
     public static final int TRACK_PANEL_MODE = 0x000088;

@@ -7,16 +7,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.KeyEvent;
 
-import com.wayto.track.common.NoticeEvent;
 import com.wayto.track.common.SharedPreferencesUtils;
 import com.wayto.track.common.TrackConstant;
+import com.wayto.track.data.TrackContract;
+import com.wayto.track.data.TrackPresenter;
 import com.wayto.track.storage.TrackTable;
 import com.wayto.track.storage.TrackTableDao;
 import com.wayto.track.utils.IStringUtils;
-
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.List;
 
@@ -29,16 +26,18 @@ import java.util.List;
  * <p>
  * Copyright (c) 2017 Shenzhen O&M Cloud Co., Ltd. All rights reserved.
  */
-public class TrackActivity extends AppCompatActivity {
+public class TrackActivity extends AppCompatActivity implements TrackContract.TrackMainView {
     private String TAG = getClass().getSimpleName();
 
-    private Fragment mTrackPanelFragment, mTrackMapFragment;
+    private TrackPanelFragment mTrackPanelFragment;
+    private TrackMapFragment mTrackMapFragment;
+
+    private TrackPresenter trackPresent;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wayto_track);
-        EventBus.getDefault().register(this);
 
         /*获取TrackId,判断当前记录状态, 若状态结束，TrackId默认为0*/
         long trackId = IStringUtils.toLong(SharedPreferencesUtils.getValue(this, TrackConstant.TRACK_ID_KEY, "").toString());
@@ -62,10 +61,11 @@ public class TrackActivity extends AppCompatActivity {
         bundle.putLong("trackId", trackId);
         bundle.putInt("status", status);
 
-        mTrackPanelFragment = new TrackPanelFragment();
+        //Create the Fragment
+        mTrackPanelFragment = TrackPanelFragment.newInstance();
         mTrackPanelFragment.setArguments(bundle);
 
-        mTrackMapFragment = new TrackMapFragment();
+        mTrackMapFragment = TrackMapFragment.newInstance();
         mTrackMapFragment.setArguments(bundle);
 
         getFragmentManager().beginTransaction()
@@ -74,12 +74,15 @@ public class TrackActivity extends AppCompatActivity {
                 .hide(mTrackMapFragment)
                 .show(mTrackPanelFragment)
                 .commitAllowingStateLoss();
+
+        //Create the Presenter
+        trackPresent = new TrackPresenter(this, this, mTrackPanelFragment, mTrackMapFragment);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        EventBus.getDefault().unregister(this);
+        trackPresent.destroy();
     }
 
     /**
@@ -95,12 +98,12 @@ public class TrackActivity extends AppCompatActivity {
                 .commitAllowingStateLoss();
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onNoticeEventBus(NoticeEvent event) {
-        if (event.getWhat() == TrackConstant.TRACK_MAP_MODE) {
-            switchFragment(mTrackMapFragment, mTrackPanelFragment);
-        } else if (event.getWhat() == TrackConstant.TRACK_PANEL_MODE) {
+    @Override
+    public void onSwitchFragment(int flag) {
+        if (flag==TrackConstant.TRACK_PANEL_FRAGMENT){
             switchFragment(mTrackPanelFragment, mTrackMapFragment);
+        }else if (flag==TrackConstant.TRACK_MAP_FRAGMENT){
+            switchFragment(mTrackMapFragment, mTrackPanelFragment);
         }
     }
 
