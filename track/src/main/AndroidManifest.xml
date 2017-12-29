@@ -33,6 +33,8 @@
 
         <activity android:name=".TrackActivity"/>
 
+        <activity android:name=".TrackHistoryActivity"/>
+
         <service android:name=".service.LocationService" />
 
         <provider

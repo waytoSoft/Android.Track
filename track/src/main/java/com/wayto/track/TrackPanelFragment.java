@@ -1,6 +1,7 @@
 package com.wayto.track;
 
 import android.app.Fragment;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
@@ -114,6 +115,8 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
                 getActivity().finish();
                 break;
             case R.id.Track_Panel_history_ImageView:/*历史*/
+                Intent intent = new Intent(getActivity(), TrackHistoryActivity.class);
+                startActivity(intent);
                 break;
             case R.id.Track_Panel_Map_ImageView:/*切换地图模式*/
                 mPresenter.onSwitchFragment(TrackConstant.TRACK_MAP_FRAGMENT);
