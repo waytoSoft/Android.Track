@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
+import com.amap.api.location.AMapLocation;
 import com.amap.api.maps.model.PolylineOptions;
 import com.wayto.track.DataApplication;
 import com.wayto.track.common.TrackConstant;
@@ -117,7 +118,9 @@ public class TrackRemote implements TrackDataSource {
 
                 /*Duration*/
                 long duration = intent.getLongExtra(TrackConstant.TRACK_DURATION_KEY, 0);
+                int gpsStatus=intent.getIntExtra(TrackConstant.TRACK_GPSSTATUS_KEY, AMapLocation.GPS_ACCURACY_BAD);
                 trackCallBack.onTrackTime(IStringUtils.showTimeCount(duration));
+                trackCallBack.onTrackGpsStatues(gpsStatus);
             }
         }
     }

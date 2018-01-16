@@ -12,8 +12,11 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.amap.api.location.AMapLocation;
 import com.wayto.track.common.TrackConstant;
 import com.wayto.track.data.TrackContract;
+import com.wayto.track.history.TrackHistoryActivity;
+import com.wayto.track.service.FloatingService;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -112,6 +115,7 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.Track_Panel_back_ImageView:/*返回*/
+                FloatingService.addFloatingButton(getActivity());
                 getActivity().finish();
                 break;
             case R.id.Track_Panel_history_ImageView:/*历史*/
@@ -200,6 +204,12 @@ public class TrackPanelFragment extends Fragment implements TrackContract.TrackP
 
     @Override
     public void onShowTrackGpsStatues(int status) {
-
+        if (status== AMapLocation.GPS_ACCURACY_UNKNOWN){
+            TrackPanelGPSStatus.setText(R.string.gps_unknown);
+        }else if (status==AMapLocation.GPS_ACCURACY_BAD){
+            TrackPanelGPSStatus.setText(R.string.gps_bad);
+        }else if (status==AMapLocation.GPS_ACCURACY_GOOD){
+            TrackPanelGPSStatus.setText(R.string.gps_good);
+        }
     }
 }

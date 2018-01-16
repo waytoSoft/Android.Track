@@ -1,4 +1,4 @@
-package com.wayto.track;
+package com.wayto.track.history;
 
 import android.annotation.SuppressLint;
 import android.graphics.Color;
@@ -6,57 +6,59 @@ import android.os.Bundle;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
-import android.view.LayoutInflater;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.view.ViewGroup;
 
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.AMapUtils;
 import com.amap.api.maps.CameraUpdateFactory;
-import com.amap.api.maps.MapFragment;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.model.BitmapDescriptor;
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.MarkerOptions;
-import com.amap.api.maps.model.MyLocationStyle;
 import com.amap.api.maps.model.Polyline;
 import com.amap.api.maps.model.PolylineOptions;
-import com.wayto.track.common.TrackConstant;
-import com.wayto.track.data.TrackContract;
-import com.wayto.track.service.data.LocationEntity;
+import com.wayto.track.R;
+import com.wayto.track.history.data.TrackPointContract;
+import com.wayto.track.history.data.TrackPointPresenter;
 import com.wayto.track.storage.TrackPointTable;
+import com.wayto.track.widget.SwipeBackLayout;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
-import butterknife.Unbinder;
 
 import static android.support.v4.util.Preconditions.checkNotNull;
 
 /**
- * 足迹地图模式
+ * 足迹详情
  * <p>
  * author: hezhiWu <hezhi.woo@gmail.com>
  * version: V1.0
- * created at 2017/11/22 15:43
+ * created at 2018/1/8 17:01
  * <p>
  * Copyright (c) 2017 Shenzhen O&M Cloud Co., Ltd. All rights reserved.
  */
 @SuppressLint("RestrictedApi")
-public class TrackMapFragment extends MapFragment implements TrackContract.TrackMapView {
-    private final String TAG = getClass().getSimpleName();
+public class TrackDetailsActivity extends AppCompatActivity implements TrackPointContract.QueryTrackPointViwe {
 
-    @BindView(R.id.Track_MapView)
-    MapView TrackMapView;
-    Unbinder unbinder;
+    @BindView(R.id.TrackDetails_toolbar)
+    Toolbar mToolbar;
+    @BindView(R.id.TrackDetails_MapView)
+    MapView mMapView;
+
+    private ActionBar mActionBar;
+
+    private SwipeBackLayout swipeBackLayout;
 
     private AMap mAMap;
-    private MyLocationStyle locationStyle;
+
+    private TrackPointPresenter mPresenter;
 
     //实线集合
     private List<PolylineOptions> mTrackSolidArrowLineList = new ArrayList<>();
@@ -64,79 +66,52 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
     //虚线集合
     private List<PolylineOptions> mTrackDotLineList = new ArrayList<>();
 
-    //临时点集合
-    private List<LatLng> tempLatLngs = new ArrayList<>();
-
-    //最后一个点
-    private LatLng lastLatLng;
-
-    private long trackId;
-
-    private TrackContract.Presenter mPresenter;
-
-    private Thread mThreed;
-
-    public TrackMapFragment() {
-
-    }
-
-    public static TrackMapFragment newInstance() {
-        return new TrackMapFragment();
-    }
-
     @Override
-    public void onCreate(Bundle bundle) {
-        super.onCreate(bundle);
-        trackId = getArguments().getLong("trackId", 0);
-    }
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_track_details);
+        ButterKnife.bind(this);
 
-    @Nullable
-    @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_track_map, null);
-        unbinder = ButterKnife.bind(this, rootView);
-        TrackMapView.onCreate(savedInstanceState);
+        mMapView.onCreate(savedInstanceState);
+        mAMap = mMapView.getMap();
 
-        if (mAMap == null) {
-            mAMap = TrackMapView.getMap();
-        }
+        swipeBackLayout = new SwipeBackLayout(this);
+        swipeBackLayout.replaceLayer(this);
+
+        //init Toolbar
+        setSupportActionBar(mToolbar);
+        mActionBar = getSupportActionBar();
+        mActionBar.setDisplayHomeAsUpEnabled(true);
+        mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
 
         initMapView();
 
-        mThreed = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                mPresenter.onQueryTrackPointTables(trackId);
-            }
-        });
-        mThreed.start();
-
-        return rootView;
+        mPresenter = new TrackPointPresenter(this);
+        mPresenter.queryTrackPoint(getIntent().getLongExtra("id", 0));
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        unbinder.unbind();
-
-        mPresenter.dettach();
-
-        if (mThreed != null) {
-            mThreed.interrupt();
-        }
+    protected void onDestroy() {
+        super.onDestroy();
+        mPresenter.destroy();
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        TrackMapView.onSaveInstanceState(outState);
+        mMapView.onSaveInstanceState(outState);
     }
 
     /**
      * 初始化地图
      * <p>
      * author: hezhiWu
-     * created at 2017/11/24 11:36
+     * created at 2018/1/9 15:56
      */
     private void initMapView() {
         /*隐藏放大缩小按钮*/
@@ -144,30 +119,15 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
         mAMap.getUiSettings().setRotateGesturesEnabled(false);
         mAMap.getUiSettings().setMyLocationButtonEnabled(false);
 
-        mAMap.setMyLocationEnabled(true);
-        mAMap.setMapType(AMap.MAP_TYPE_NIGHT);
-
-        locationStyle = new MyLocationStyle();
-        locationStyle.showMyLocation(true);
-        locationStyle.radiusFillColor(Color.parseColor("#00000000"));
-        locationStyle.strokeColor(Color.parseColor("#00000000"));
-
-        mAMap.setMyLocationStyle(locationStyle);
-        mAMap.moveCamera(new CameraUpdateFactory().zoomTo(16));
+//        mAMap.setMapType(AMap.MAP_TYPE_NIGHT);
     }
 
     @Override
-    public void setmPresenter(TrackContract.Presenter mPresenter) {
-        this.mPresenter = mPresenter;
-    }
-
-    @Override
-    public void queryTrackPointTables(List<TrackPointTable> trackPointTables) {
-        if (trackPointTables == null || trackPointTables.size() == 0)
-            return;
-
-        lastLatLng = new LatLng(trackPointTables.get(trackPointTables.size() - 1).getLatitude(),
-                trackPointTables.get(trackPointTables.size() - 1).getLongitude());
+    public void queryTrackPointTablesSuccess(List<TrackPointTable> trackPointTables) {
+        int size = trackPointTables.size();
+        LatLng marker = new LatLng(trackPointTables.get(size / 2).getLatitude(), trackPointTables.get(size / 2).getLongitude());
+        mAMap.moveCamera(CameraUpdateFactory.changeLatLng(marker));
+        mAMap.moveCamera(CameraUpdateFactory.zoomTo(16));
 
         createPolyline(trackPointTables);
 
@@ -180,52 +140,21 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
         for (PolylineOptions polyline : mTrackDotLineList) {
             addPolyLine(polyline);
         }
-
-        Log.d(TAG, "trackTable size=" + trackPointTables.size());
     }
 
     @Override
-    public void refreshLocationPoint(LocationEntity locationEntity) {
-        if (lastLatLng == null) {
-            lastLatLng = new LatLng(locationEntity.getLatitude(), locationEntity.getLongitude());
-        } else {
-            LatLng latLng = new LatLng(locationEntity.getLatitude(), locationEntity.getLongitude());
+    public void queryTrackPointTablesFailure(String msg) {
 
-            tempLatLngs.add(lastLatLng);
-            tempLatLngs.add(latLng);
+    }
 
-            String tempColor = "#66FFFF";
-            double distance = AMapUtils.calculateLineDistance(lastLatLng, latLng);
-            if (distance > 1000) {
-                tempColor = "#CCCCCC";
-            }
-
-            addPolyLine(createPolyLineOption(tempLatLngs, 10, Color.parseColor(tempColor)));
-        }
+    @Override
+    public void drawableEndPoint(double lat, double lng) {
+        drawablePointMarker(lng, lat, R.mipmap.icon_track_end);
     }
 
     @Override
     public void drawableStartPoint(double lat, double lng) {
         drawablePointMarker(lng, lat, R.mipmap.icon_track_start);
-    }
-
-    @Override
-    public void removeMapView() {
-        if (mAMap==null)
-            return;
-
-        mAMap.clear();
-    }
-
-    @OnClick({R.id.Track_Map_back_Layout, R.id.Track_Map_Location_Layout})
-    public void onClick(View view) {
-        switch (view.getId()) {
-            case R.id.Track_Map_back_Layout:
-                mPresenter.onSwitchFragment(TrackConstant.TRACK_PANEL_FRAGMENT);
-                break;
-            case R.id.Track_Map_Location_Layout:
-                break;
-        }
     }
 
     /**
@@ -283,7 +212,7 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
 
                     solidPoints.add(point);
 
-                    PolylineOptions polylineOptions = createPolyLineOption(solidPoints, 10, Color.parseColor("#66FFFF"));
+                    PolylineOptions polylineOptions = createPolyLineOption(solidPoints, 10, Color.parseColor("#00BFFF"));
                     mTrackSolidArrowLineList.add(polylineOptions);
                     solidPoints.clear();
                 }

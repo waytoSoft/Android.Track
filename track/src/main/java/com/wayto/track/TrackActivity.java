@@ -11,6 +11,7 @@ import com.wayto.track.common.SharedPreferencesUtils;
 import com.wayto.track.common.TrackConstant;
 import com.wayto.track.data.TrackContract;
 import com.wayto.track.data.TrackPresenter;
+import com.wayto.track.service.FloatingService;
 import com.wayto.track.storage.TrackTable;
 import com.wayto.track.storage.TrackTableDao;
 import com.wayto.track.utils.IStringUtils;
@@ -37,9 +38,11 @@ public class TrackActivity extends AppCompatActivity implements TrackContract.Tr
     private int fragmentFlag = TrackConstant.TRACK_PANEL_FRAGMENT;
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState)  {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wayto_track);
+
+        FloatingService.removeLoatingButton(this);
 
         /*获取TrackId,判断当前记录状态, 若状态结束，TrackId默认为0*/
         long trackId = IStringUtils.toLong(SharedPreferencesUtils.getValue(this, TrackConstant.TRACK_ID_KEY, "").toString());
@@ -87,6 +90,13 @@ public class TrackActivity extends AppCompatActivity implements TrackContract.Tr
         trackPresent.destroy();
     }
 
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0,R.anim.slide_out_right);
+
+    }
+
     /**
      * 界面切换
      * <p>
@@ -119,6 +129,7 @@ public class TrackActivity extends AppCompatActivity implements TrackContract.Tr
 
                 return true;
             } else
+                FloatingService.addFloatingButton(this);
                 this.finish();
         }
         return super.onKeyDown(keyCode, event);

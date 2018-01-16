@@ -53,6 +53,8 @@ public class LocationService extends Service implements AMapLocationListener {
     private Timer mTimer;
     private TrackTimerTask mTrackTimerTask;
 
+    private int gpsAccuracyStatus;
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -99,7 +101,7 @@ public class LocationService extends Service implements AMapLocationListener {
                 startTimer();
 
                 /*开启前台服务*/
-                startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "足迹采集", "路径采集中", R.mipmap.ic_launcher_round, TrackActivity.class));
+                startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "轨迹", "路径采集中...", R.mipmap.ic_launcher_round, TrackActivity.class));
 
             } else if (trackState == TrackConstant.LOCATION_STOP_FLAG) {/*停止*/
                 stopLocation();
@@ -114,7 +116,7 @@ public class LocationService extends Service implements AMapLocationListener {
                 cancelTimer();
 
                 /*开启前台服务*/
-                startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "足迹采集", "路径采集停止", R.mipmap.ic_launcher_round, TrackActivity.class));
+                startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "轨迹", "路径采集停止", R.mipmap.ic_launcher_round, TrackActivity.class));
 
             } else if (trackState == TrackConstant.LOCATION_CONTINUE_FLAG) {/*继续*/
                 if (mTrackHelper == null)
@@ -138,7 +140,7 @@ public class LocationService extends Service implements AMapLocationListener {
                 startTimer();
 
                 /*开启前台服务*/
-                startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "足迹采集", "路径采集中", R.mipmap.ic_launcher_round, TrackActivity.class));
+                startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "轨迹", "路径采集中", R.mipmap.ic_launcher_round, TrackActivity.class));
 
             } else if (trackState == TrackConstant.LOCATION_DESTROY_FLAG) {/*结束*/
                 destroyLocation();
@@ -292,6 +294,7 @@ public class LocationService extends Service implements AMapLocationListener {
     @Override
     public void onLocationChanged(AMapLocation aMapLocation) {
         if (aMapLocation != null && aMapLocation.getErrorCode() == 0) {
+            gpsAccuracyStatus=aMapLocation.getGpsAccuracyStatus();
             recordTrack(aMapLocation);
         }
     }
@@ -430,12 +433,13 @@ public class LocationService extends Service implements AMapLocationListener {
             if (mTrackHelper == null)
                 mTrackHelper = new TrackHelper(getApplicationContext());
 
-            Log.d("LocationService", "alar");
+            Log.d("LocationService", "distance=="+mTrackHelper.getDistance());
 
             mTrackHelper.updateTrackDuration(trackId);
 
             Intent intent1 = new Intent(TrackConstant.TRACK_REFRESH_DURATION_BROCAST_ACTION);
             intent1.putExtra(TrackConstant.TRACK_DURATION_KEY, mTrackHelper.getDuration());
+            intent1.putExtra(TrackConstant.TRACK_GPSSTATUS_KEY,gpsAccuracyStatus);
             getApplication().sendBroadcast(intent1);
         }
     }

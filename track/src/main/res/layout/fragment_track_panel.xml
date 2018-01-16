@@ -31,7 +31,7 @@
                 android:layout_centerInParent="true"
                 android:layout_marginRight="20dp"
                 android:padding="15dp"
-                android:text="GPS-信号源"
+                android:text="@string/gps_bad"
                 android:textColor="#424242"
                 android:textSize="16sp" />
 

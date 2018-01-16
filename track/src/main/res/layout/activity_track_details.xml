@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="#F5F5F5">
 
     <android.support.v7.widget.Toolbar
-        android:id="@+id/Track_toolbar"
+        android:id="@+id/TrackDetails_toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#4D4457"
         app:navigationIcon="@drawable/ic_arrow_back_black_24dp"
-        app:title="轨迹历史"
+        app:title="轨迹详情"
         app:titleTextColor="@android:color/white" />
 
-    <com.wayto.track.widget.PullToRefresRecyclerView
-        android:id="@+id/Track_History_RecyclerView"
+    <com.amap.api.maps.MapView
+        android:id="@+id/TrackDetails_MapView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_below="@+id/TrackDetails_toolbar" />
 
-</LinearLayout>
+</RelativeLayout>

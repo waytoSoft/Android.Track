@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.support.v7.app.NotificationCompat;
 
+import java.text.SimpleDateFormat;
+
 /**
  * author: hezhiWu <hezhi.woo@gmail.com>
  * version: V1.0
@@ -16,6 +18,16 @@ import android.support.v7.app.NotificationCompat;
  * Copyright (c) 2017 Shenzhen O&M Cloud Co., Ltd. All rights reserved.
  */
 public class IUtils {
+
+    /**
+     * 时间格式
+     * <p>
+     * author: hezhiWu
+     * created at 2018/1/8 14:33
+     */
+    public static String formatDate(long time, String str) {
+        return new SimpleDateFormat(str).format(time);
+    }
 
     /**
      * 设置提醒

@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">Track</string>
+
+    <string name="empty_data">暂无数据</string>
+
+    <string name="loading_more">加载更多</string>
+    
+    <string name="start_time">开始时间：%1$s</string>
+    <string name="end_time">结束时间：%1$s</string>
+    <string name="track_unit">公里</string>
+    
+    <string name="gps_unknown">未检测GPS信号</string>
+    <string name="gps_bad">GPS信号弱</string>
+    <string name="gps_good">GPS信号强</string>
 </resources>
