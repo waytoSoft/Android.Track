@@ -51,7 +51,8 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
         mTrackPanelView.setmPresenter(this);
         mTrackMapView.setmPresenter(this);
 
-        mTrackRemote = new TrackRemote(this);
+        mTrackRemote = TrackRemote.newInstall();
+        mTrackRemote.onSetCallBack(this);
     }
 
     @Override
@@ -62,7 +63,10 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
 
     @Override
     public void destroy() {
+        mTrackRemote.onDestroy();
         mActivity = null;
+        startPointLng=0;
+        startPointLat=0;
     }
 
     @Override

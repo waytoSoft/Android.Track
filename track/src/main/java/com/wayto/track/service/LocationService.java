@@ -166,6 +166,8 @@ public class LocationService extends Service implements AMapLocationListener {
         return super.onStartCommand(intent, flags, startId);
     }
 
+
+
     /**
      * 初始化LocationClient
      * <p>

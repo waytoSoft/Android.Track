@@ -1,5 +1,6 @@
 package com.wayto.track;
 
+import android.Manifest;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -15,6 +16,7 @@ import com.wayto.track.service.FloatingService;
 import com.wayto.track.storage.TrackTable;
 import com.wayto.track.storage.TrackTableDao;
 import com.wayto.track.utils.IStringUtils;
+import com.wayto.track.utils.PermissionHelper;
 
 import java.util.List;
 
@@ -38,7 +40,7 @@ public class TrackActivity extends AppCompatActivity implements TrackContract.Tr
     private int fragmentFlag = TrackConstant.TRACK_PANEL_FRAGMENT;
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState)  {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wayto_track);
 
@@ -82,6 +84,11 @@ public class TrackActivity extends AppCompatActivity implements TrackContract.Tr
 
         //Create the Presenter
         trackPresent = new TrackPresenter(this, this, mTrackPanelFragment, mTrackMapFragment);
+
+        /*检测定位权限*/
+        PermissionHelper.checkPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION, 101);
+
+        PermissionHelper.checkPermission(this, Manifest.permission.CHANGE_WIFI_STATE, 101);
     }
 
     @Override
@@ -93,8 +100,8 @@ public class TrackActivity extends AppCompatActivity implements TrackContract.Tr
     @Override
     public void finish() {
         super.finish();
-        overridePendingTransition(0,R.anim.slide_out_right);
-
+        overridePendingTransition(0, R.anim.slide_out_right);
+        System.gc();
     }
 
     /**
@@ -125,12 +132,12 @@ public class TrackActivity extends AppCompatActivity implements TrackContract.Tr
         if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
             if (fragmentFlag == TrackConstant.TRACK_MAP_FRAGMENT) {
                 switchFragment(mTrackPanelFragment, mTrackMapFragment);
-                fragmentFlag=TrackConstant.TRACK_PANEL_FRAGMENT;
+                fragmentFlag = TrackConstant.TRACK_PANEL_FRAGMENT;
 
                 return true;
             } else
                 FloatingService.addFloatingButton(this);
-                this.finish();
+            this.finish();
         }
         return super.onKeyDown(keyCode, event);
     }

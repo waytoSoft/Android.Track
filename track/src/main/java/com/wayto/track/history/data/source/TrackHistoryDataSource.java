@@ -1,7 +1,5 @@
 package com.wayto.track.history.data.source;
 
-import com.wayto.track.provider.TrackData;
-import com.wayto.track.storage.TrackPointTable;
 import com.wayto.track.storage.TrackTable;
 
 import java.util.List;

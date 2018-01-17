@@ -294,7 +294,6 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
     }
 
     /**
-     * r
      * 创建线段
      * <p>
      * author: hezhiWu

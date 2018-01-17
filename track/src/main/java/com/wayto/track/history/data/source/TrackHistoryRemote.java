@@ -1,9 +1,9 @@
 package com.wayto.track.history.data.source;
 
 import com.wayto.track.DataApplication;
-import com.wayto.track.storage.TrackPointTable;
-import com.wayto.track.storage.TrackPointTableDao;
+import com.wayto.track.common.TrackConstant;
 import com.wayto.track.storage.TrackTable;
+import com.wayto.track.storage.TrackTableDao;
 
 import java.util.List;
 
@@ -32,7 +32,12 @@ public class TrackHistoryRemote implements TrackHistoryDataSource {
     @Override
     public void queryTrackHistory(int index, int pageSize, QueryTrackHistoryCallBack callBack) {
         try {
-            List<TrackTable> trackTables = DataApplication.getInstance().getDaoSession().getTrackTableDao().loadAll();
+            List<TrackTable> trackTables = DataApplication.getInstance().getDaoSession().getTrackTableDao()
+                    .queryBuilder()
+                    .where(TrackTableDao.Properties.Distance.gt(10))
+                    .where(TrackTableDao.Properties.Status.eq(TrackConstant.TRACK_END))
+                    .list();
+
             callBack.onQueryTrackHistorySuccess(trackTables);
         } catch (Exception e) {
             callBack.onQueryTrackHistoryFailure(100, "query TrackTable failure");

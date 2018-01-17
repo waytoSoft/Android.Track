@@ -32,6 +32,8 @@ public interface TrackDataSource {
         void getTrackStatus(int status);
     }
 
+    void onSetCallBack(TrackCallBack callBack);
+
     void onStartTrackGather(Context context);
 
     void onStopTrackGather(Context context);
@@ -43,4 +45,8 @@ public interface TrackDataSource {
     void onQueryTrackPoint(Context context, long trackId);
 
     void onCheckTrack(long trackId);
+
+    int queryTrackStatus(long trackId);
+
+    void onDestroy();
 }

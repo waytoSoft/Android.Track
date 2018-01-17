@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -17,8 +16,13 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 
 
+import com.wayto.track.DataApplication;
 import com.wayto.track.R;
 import com.wayto.track.TrackActivity;
+import com.wayto.track.common.SharedPreferencesUtils;
+import com.wayto.track.common.TrackConstant;
+import com.wayto.track.data.source.TrackRemote;
+import com.wayto.track.utils.IStringUtils;
 
 import butterknife.ButterKnife;
 
@@ -85,10 +89,18 @@ public class FloatingService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-//        if (TrackRemote.getInstance().isTrackCollectioning()) {
+        long trackId = IStringUtils.toLong(SharedPreferencesUtils.getValue(DataApplication.getInstance(), TrackConstant.TRACK_ID_KEY, "").toString());
+        int status = TrackRemote.newInstall().queryTrackStatus(trackId);
+
+        if (status == TrackConstant.TRACK_START
+                || status == TrackConstant.TRACK_CONTINUE
+                || status == TrackConstant.TRACK_STOP) {
+
             initWindow();
             initFloating();
-//        }
+
+        }
+
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -217,7 +229,7 @@ public class FloatingService extends Service {
                     wmParams.x += mTouchCurrentX - mTouchStartX;
                     wmParams.y += mTouchCurrentY - mTouchStartY;
 
-                    if (mlayout!=null){
+                    if (mlayout != null) {
                         mWindowManager.updateViewLayout(mlayout, wmParams);
                     }
 

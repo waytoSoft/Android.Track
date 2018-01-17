@@ -102,6 +102,12 @@ public class TrackDetailsActivity extends AppCompatActivity implements TrackPoin
     }
 
     @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0,R.anim.slide_out_right);
+    }
+
+    @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         mMapView.onSaveInstanceState(outState);

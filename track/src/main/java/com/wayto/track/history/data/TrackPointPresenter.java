@@ -2,14 +2,9 @@ package com.wayto.track.history.data;
 
 import android.annotation.SuppressLint;
 
-import com.wayto.track.history.data.TrackHistoryContract;
-import com.wayto.track.history.data.TrackPointContract;
-import com.wayto.track.history.data.source.TrackHistoryDataSource;
-import com.wayto.track.history.data.source.TrackHistoryRemote;
 import com.wayto.track.history.data.source.TrackPointDataSource;
 import com.wayto.track.history.data.source.TrackPointRemote;
 import com.wayto.track.storage.TrackPointTable;
-import com.wayto.track.storage.TrackTable;
 
 import java.util.List;
 

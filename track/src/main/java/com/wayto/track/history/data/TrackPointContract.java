@@ -2,7 +2,6 @@ package com.wayto.track.history.data;
 
 import com.wayto.track.data.BasePresenter;
 import com.wayto.track.storage.TrackPointTable;
-import com.wayto.track.storage.TrackTable;
 
 import java.util.List;
 

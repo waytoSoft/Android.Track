@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 
 import com.wayto.track.history.data.source.TrackHistoryDataSource;
 import com.wayto.track.history.data.source.TrackHistoryRemote;
-import com.wayto.track.storage.TrackPointTable;
 import com.wayto.track.storage.TrackTable;
 
 import java.util.List;
