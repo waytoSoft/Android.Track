@@ -22,6 +22,7 @@ import com.wayto.track.common.TrackConstant;
 import com.wayto.track.service.data.LocationEntity;
 import com.wayto.track.utils.IUtils;
 
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -48,12 +49,14 @@ public class LocationService extends Service implements AMapLocationListener {
     private double mLastLng;
     private double mLastLat;
     private double mDistance;
-    private boolean isFirstLocation;
+    private boolean isFirstLocation = true;
 
     private Timer mTimer;
     private TrackTimerTask mTrackTimerTask;
 
-    private int gpsAccuracyStatus;
+    private int trackState = -1;
+
+    private int gpsStatus = -1;
 
     @Nullable
     @Override
@@ -71,86 +74,76 @@ public class LocationService extends Service implements AMapLocationListener {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+//        int flag = Integer.parseInt(SharedPreferencesUtils.getValue(this, TrackConstant.LOCATION_STATUS_KEY, -1).toString());
+//        /*判断启动定位 or 开始采集路径*/
+//        if (flag == TrackConstant.START_LOCATION_FLAG) {
+//
+//            startLocation();
+//        } else if (flag == TrackConstant.TRACK_GATHER_FLAG) {
+//            trackState = Integer.parseInt(SharedPreferencesUtils.getValue(this, TrackConstant.TRACK_STATUS_KEY, -1).toString());
+//
+//            paresTrackIntent(trackState);
+//        }
+
+        startLocation();
+
+        paresTrackIntent();
+
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    /**
+     * 解析测试Intent
+     * <p>
+     * author: hezhiWu
+     * created at 2018/2/5 16:29
+     */
+    private void paresTrackIntent() {
+        if (mTrackHelper == null)
+            mTrackHelper = new TrackHelper(this);
+
+        trackState = mTrackHelper.getTrackStatusFromTem();
+
         try {
-            int trackState = Integer.parseInt(SharedPreferencesUtils.getValue(this, TrackConstant.LOCATION_STATUS_KEY, -1).toString());
-            if (trackState == TrackConstant.LOCATION_START_FLAG) {/*开始*/
-                if (mTrackHelper == null)
-                    mTrackHelper = new TrackHelper(this);
-
-                //1、判断当前TrackId,状态，创建一条足迹记录[解决定位延时，计算时间不准备问题]
-                long tId = mTrackHelper.getTrackId();
-                int status = mTrackHelper.getTrackStatus(tId);
-                if (status == TrackConstant.TRACK_STOP
-                        || status == TrackConstant.TRACK_CONTINUE
-                        || status == TrackConstant.TRACK_START) {
-
-                    trackId = tId;
-                } else {
-                    if (trackId <= 0) {
-                        trackId = mTrackHelper.instertTrack(0, 0);
-
-                        isFirstLocation = true;
-                    }
-                }
+            if (trackState == TrackConstant.TRACK_START) {/*开始*/
+                trackId = mTrackHelper.getTrackId();
 
                 //2、启动定位
                 startLocation();
 
                 //3、开户定时提醒
-                //IUtils.setAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION, 1000);
                 startTimer();
 
                 /*开启前台服务*/
                 startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "轨迹", "路径采集中...", R.mipmap.ic_launcher_round, TrackActivity.class));
 
-            } else if (trackState == TrackConstant.LOCATION_STOP_FLAG) {/*停止*/
-                stopLocation();
-
-                if (mTrackHelper != null) {
-                    mTrackHelper.updateTrackStatus(mTrackHelper.getTrackId(), TrackConstant.TRACK_STOP);
-                    mTrackHelper.clearLocationTime();
-                }
+            } else if (trackState == TrackConstant.TRACK_STOP) {/*停止*/
+                mTrackHelper.updateTrackStatus(mTrackHelper.getTrackId(), TrackConstant.TRACK_STOP);
+                mTrackHelper.clearLocationTime();
 
                 /*关闭定时提醒*/
-                //IUtils.cancelAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION);
                 cancelTimer();
 
                 /*开启前台服务*/
                 startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "轨迹", "路径采集停止", R.mipmap.ic_launcher_round, TrackActivity.class));
-
-            } else if (trackState == TrackConstant.LOCATION_CONTINUE_FLAG) {/*继续*/
-                if (mTrackHelper == null)
-                    mTrackHelper = new TrackHelper(this);
-
+            } else if (trackState == TrackConstant.TRACK_CONTINUE) {/*继续*/
                 mTrackHelper.updateTrackStatus(mTrackHelper.getTrackId(), TrackConstant.TRACK_CONTINUE);
 
-                long tId = mTrackHelper.getTrackId();
-                int status = mTrackHelper.getTrackStatus(tId);
-                if (status == TrackConstant.TRACK_STOP
-                        || status == TrackConstant.TRACK_CONTINUE
-                        || status == TrackConstant.TRACK_START) {
-
-                    trackId = tId;
-                }
+                trackId = mTrackHelper.getTrackId();
 
                 startLocation();
 
-                /*开启定时提醒*/
-                //IUtils.setAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION, 1000);
                 startTimer();
 
                 /*开启前台服务*/
                 startForeground(17, IUtils.CreateForegroundNotification(getApplicationContext(), "轨迹", "路径采集中", R.mipmap.ic_launcher_round, TrackActivity.class));
+            } else if (trackState == TrackConstant.TRACK_END) {/*结束*/
+                mTrackHelper.updateTrackStatus(mTrackHelper.getTrackId(), TrackConstant.TRACK_END);
 
-            } else if (trackState == TrackConstant.LOCATION_DESTROY_FLAG) {/*结束*/
-                destroyLocation();
+                mTrackHelper.deleteTem();
 
-                if (mTrackHelper != null) {
-                    mTrackHelper.updateTrackStatus(mTrackHelper.getTrackId(), TrackConstant.TRACK_END);
-                }
+                teml = 1;
 
-                /*关闭定时提醒*/
-                //IUtils.cancelAlarm(this, (AlarmManager) getSystemService(ALARM_SERVICE), TrackConstant.TRACK_ALARM_ACTION);
                 cancelTimer();
 
                 /*注销数据*/
@@ -163,10 +156,7 @@ public class LocationService extends Service implements AMapLocationListener {
             e.printStackTrace();
             Toast.makeText(this, "ServiceGather Exception", Toast.LENGTH_SHORT).show();
         }
-        return super.onStartCommand(intent, flags, startId);
     }
-
-
 
     /**
      * 初始化LocationClient
@@ -272,7 +262,7 @@ public class LocationService extends Service implements AMapLocationListener {
         if (mTrackTimerTask == null)
             mTrackTimerTask = new TrackTimerTask();
 
-        mTimer.schedule(mTrackTimerTask, 0, 1000);
+        mTimer.schedule(mTrackTimerTask, new Date(), 1000);
     }
 
     /**
@@ -296,10 +286,14 @@ public class LocationService extends Service implements AMapLocationListener {
     @Override
     public void onLocationChanged(AMapLocation aMapLocation) {
         if (aMapLocation != null && aMapLocation.getErrorCode() == 0) {
-            gpsAccuracyStatus=aMapLocation.getGpsAccuracyStatus();
+
+            gpsStatus = aMapLocation.getGpsAccuracyStatus();
+
             recordTrack(aMapLocation);
         }
     }
+
+    private int teml = 1;
 
     /**
      * 记录足迹采集
@@ -308,26 +302,35 @@ public class LocationService extends Service implements AMapLocationListener {
      * created at 2017/11/27 17:07
      */
     private void recordTrack(AMapLocation location) {
-        if (mTrackHelper == null) {
-            mTrackHelper = new TrackHelper(this);
-        }
-
         if (location == null)
             return;
 
-        /*处理第一次定位更新起始经纬度*/
-        if (isFirstLocation) {
-            mTrackHelper.updateTrack(trackId, location.getLongitude(), location.getLatitude());
-            isFirstLocation = false;
+        //TODO 测试数据
+        if (trackState == TrackConstant.TRACK_START || trackState == TrackConstant.TRACK_CONTINUE) {
+            location.setLatitude(location.getLatitude() + 0.00004 * teml);
+            location.setLongitude(location.getLongitude() + 0.00005 * teml);
+            teml++;
+        }
+
+        //更新前台地图当前位置
+        sendLocationData(this, location.getLatitude(), location.getLongitude());
+
+        //判断采集状态是否为开始 or 断续
+        if (trackState != TrackConstant.TRACK_CONTINUE &&
+                trackState != TrackConstant.TRACK_START) {
+
+            return;
         }
 
         //1、定位点与上次的距离大于0
         if (mLastLng > 0 && mLastLng > 0) {
             mDistance = AMapUtils.calculateLineDistance(new LatLng(location.getLatitude(), location.getLongitude()), new LatLng(mLastLat, mLastLng));
         }
+
         if (mLastLat > 0 && mLastLng > 0 && mDistance <= 0) {
             return;
         }
+
         mLastLng = location.getLongitude();
         mLastLat = location.getLatitude();
 
@@ -337,25 +340,18 @@ public class LocationService extends Service implements AMapLocationListener {
 
         /*更新Track表*/
         mTrackHelper.updateTrackDistanceSpeed(trackId, location);
-
-        sendTrackData(this, location);
     }
 
     /**
-     * 更新UI
+     * 更新实时位置
      * <p>
      * author: hezhiWu
-     * created at 2017/11/28 10:10
+     * created at 2018/1/17 16:30
      */
-    public void sendTrackData(Context context, AMapLocation location) {
-        if (mTrackHelper == null)
-            mTrackHelper = new TrackHelper(context);
-
-        Intent intent = new Intent(TrackConstant.TRACK_REFRESH_VIEW_BROCAST_ACTION);
-        intent.putExtra(TrackConstant.TRACK_DISTANCE_KEY, mTrackHelper.getDistance());
-        intent.putExtra(TrackConstant.TRACK_SPEED_KEY, mTrackHelper.getSpeed());
-        intent.putExtra(TrackConstant.TRACK_DURATION_KEY, mTrackHelper.getDuration());
-        intent.putExtra(TrackConstant.TRACK_LOCATION_KEY, createLocationEntity(location));
+    public void sendLocationData(Context context, double lat, double lng) {
+        Intent intent = new Intent(TrackConstant.TRACK_REFRESH_LOCATION_BROCAST_ACTION);
+        intent.putExtra(TrackConstant.LAT, lat);
+        intent.putExtra(TrackConstant.LNG, lng);
         context.sendBroadcast(intent);
     }
 
@@ -412,12 +408,11 @@ public class LocationService extends Service implements AMapLocationListener {
                 if (mTrackHelper == null)
                     mTrackHelper = new TrackHelper(context);
 
-                Log.d("LocationService", "alar");
-
-                mTrackHelper.updateTrackDuration(trackId);
+                //更新时长
+                long duration = mTrackHelper.updateTrackDuration(trackId);
 
                 Intent intent1 = new Intent(TrackConstant.TRACK_REFRESH_DURATION_BROCAST_ACTION);
-                intent1.putExtra(TrackConstant.TRACK_DURATION_KEY, mTrackHelper.getDuration());
+                intent1.putExtra(TrackConstant.TRACK_DURATION_KEY, duration);
                 context.sendBroadcast(intent1);
             }
         }
@@ -435,13 +430,16 @@ public class LocationService extends Service implements AMapLocationListener {
             if (mTrackHelper == null)
                 mTrackHelper = new TrackHelper(getApplicationContext());
 
-            Log.d("LocationService", "distance=="+mTrackHelper.getDistance());
-
-            mTrackHelper.updateTrackDuration(trackId);
+            //更新时长
+            long duration = mTrackHelper.updateTrackDuration(trackId);
 
             Intent intent1 = new Intent(TrackConstant.TRACK_REFRESH_DURATION_BROCAST_ACTION);
-            intent1.putExtra(TrackConstant.TRACK_DURATION_KEY, mTrackHelper.getDuration());
-            intent1.putExtra(TrackConstant.TRACK_GPSSTATUS_KEY,gpsAccuracyStatus);
+            intent1.putExtra(TrackConstant.TRACK_DURATION_KEY, duration);
+            intent1.putExtra(TrackConstant.TRACK_GPSSTATUS_KEY, gpsStatus);
+            intent1.putExtra(TrackConstant.TRACK_SPEED_KEY, mTrackHelper.getSpeed());
+            intent1.putExtra(TrackConstant.TRACK_DISTANCE_KEY, mTrackHelper.getDistance());
+            intent1.putExtra(TrackConstant.LAT, mLastLat);
+            intent1.putExtra(TrackConstant.LNG, mLastLng);
             getApplication().sendBroadcast(intent1);
         }
     }

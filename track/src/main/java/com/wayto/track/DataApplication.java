@@ -68,13 +68,27 @@ public class DataApplication extends Application {
     }
 
     /**
+     * 开启定位服务
+     * <p>
+     * author: hezhiWu
+     * created at 2018/1/17 16:12
+     */
+    public void startLocation(Context context) {
+        SharedPreferencesUtils.setValue(instance, TrackConstant.LOCATION_STATUS_KEY, TrackConstant.START_LOCATION_FLAG);
+
+        Intent intent = new Intent(context, LocationService.class);
+        context.startService(intent);
+    }
+
+    /**
      * 开户采集服务
      * <p>
      * author: hezhiWu
      * created at 2017/11/24 11:38
      */
     public void startServiceGather(Context context) {
-        SharedPreferencesUtils.setValue(instance, TrackConstant.LOCATION_STATUS_KEY, TrackConstant.LOCATION_START_FLAG);
+        SharedPreferencesUtils.setValue(instance, TrackConstant.LOCATION_STATUS_KEY, TrackConstant.TRACK_GATHER_FLAG);
+        SharedPreferencesUtils.setValue(instance,TrackConstant.TRACK_STATUS_KEY,TrackConstant.TRACK_START_FLAG);
 
         Intent intent = new Intent(context, LocationService.class);
         context.startService(intent);
@@ -87,7 +101,8 @@ public class DataApplication extends Application {
      * created at 2017/11/24 11:38
      */
     public void stopServiceGather(Context context) {
-        SharedPreferencesUtils.setValue(instance, TrackConstant.LOCATION_STATUS_KEY, TrackConstant.LOCATION_STOP_FLAG);
+        SharedPreferencesUtils.setValue(instance, TrackConstant.LOCATION_STATUS_KEY, TrackConstant.TRACK_GATHER_FLAG);
+        SharedPreferencesUtils.setValue(instance,TrackConstant.TRACK_STATUS_KEY,TrackConstant.TRACK_STOP_FLAG);
 
         Intent intent = new Intent(context, LocationService.class);
         context.startService(intent);
@@ -100,7 +115,8 @@ public class DataApplication extends Application {
      * created at 2017/11/27 20:12
      */
     public void contiuneServiceGather(Context context) {
-        SharedPreferencesUtils.setValue(instance, TrackConstant.LOCATION_STATUS_KEY, TrackConstant.LOCATION_CONTINUE_FLAG);
+        SharedPreferencesUtils.setValue(instance, TrackConstant.LOCATION_STATUS_KEY, TrackConstant.TRACK_GATHER_FLAG);
+        SharedPreferencesUtils.setValue(instance,TrackConstant.TRACK_STATUS_KEY,TrackConstant.TRACK_CONTINUE_FLAG);
 
         Intent intent = new Intent(context, LocationService.class);
         context.startService(intent);
@@ -113,7 +129,8 @@ public class DataApplication extends Application {
      * created at 2017/11/24 11:46
      */
     public void destroyServiceGather(Context context) {
-        SharedPreferencesUtils.setValue(instance, TrackConstant.LOCATION_STATUS_KEY, TrackConstant.LOCATION_DESTROY_FLAG);
+        SharedPreferencesUtils.setValue(instance, TrackConstant.LOCATION_STATUS_KEY, TrackConstant.TRACK_GATHER_FLAG);
+        SharedPreferencesUtils.setValue(instance,TrackConstant.TRACK_STATUS_KEY,TrackConstant.TRACK_DESTROY_FLAG);
 
         Intent intent = new Intent(context, LocationService.class);
         context.startService(intent);

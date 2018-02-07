@@ -89,9 +89,7 @@ public class FloatingService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        long trackId = IStringUtils.toLong(SharedPreferencesUtils.getValue(DataApplication.getInstance(), TrackConstant.TRACK_ID_KEY, "").toString());
-        int status = TrackRemote.newInstall().queryTrackStatus(trackId);
-
+        int status = TrackRemote.newInstall().queryTrackStatusFromTem();
         if (status == TrackConstant.TRACK_START
                 || status == TrackConstant.TRACK_CONTINUE
                 || status == TrackConstant.TRACK_STOP) {

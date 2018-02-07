@@ -9,8 +9,6 @@ import android.net.Uri;
 import com.amap.api.location.AMapLocation;
 import com.amap.api.maps.AMapUtils;
 import com.amap.api.maps.model.LatLng;
-import com.wayto.track.DataApplication;
-import com.wayto.track.common.SharedPreferencesUtils;
 import com.wayto.track.common.TrackConstant;
 import com.wayto.track.provider.TrackData;
 import com.wayto.track.storage.TrackTable;
@@ -32,9 +30,13 @@ public class TrackHelper {
     private long mLastLocationTime;
     private double distance;
     private float speed;
-    private long duration;
+
+    private Context context;
+
+    private long trackId = -1;
 
     public TrackHelper(Context context) {
+        this.context = context;
         contentResolver = context.getContentResolver();
     }
 
@@ -45,80 +47,56 @@ public class TrackHelper {
      * created at 2017/9/12 上午10:46
      */
     public long getTrackId() {
-        return IStringUtils.toLong(SharedPreferencesUtils.getValue(DataApplication.getInstance(), TrackConstant.TRACK_ID_KEY, "").toString());
-    }
+        Cursor cursor = contentResolver.query(TrackData.Tem.TRACK_TEM_URL, new String[]{TrackData.Tem.TemColumns.trackId}, null, null, null);
 
-    /**
-     * 查询设施状态
-     * <p>
-     * author: hezhiWu
-     * created at 2017/11/27 15:02
-     *
-     * @param trackId
-     */
-    public int getTrackStatus(long trackId) {
-        int status = -1;
-
-        Cursor cursor = contentResolver.query(TrackData.Track.TRACK_CONTENT_URI
-                , null
-                , TrackData.Track.TrackColumns._ID + " = " + trackId
-                , null
-                , null
-                , null);
-
-        while (cursor.moveToNext()) {
-            status = cursor.getInt(cursor.getColumnIndex(TrackData.Track.TrackColumns.STATUS));
-            break;
+        if (cursor.moveToNext()) {
+            trackId = cursor.getLong(cursor.getColumnIndex(TrackData.Tem.TemColumns.trackId));
         }
 
-        cursor.close();
-
-        return status;
+        return trackId;
     }
 
     /**
-     * 插入
+     * 获取采集状态
      * <p>
      * author: hezhiWu
-     * created at 2017/11/27 15:04
-     *
-     * @param location
+     * created at 2018/2/7 11:14
      */
-    public long instertTrack(AMapLocation location) {
+    public int getTrackStatusFromTem() {
+        Cursor cursor = contentResolver.query(TrackData.Tem.TRACK_TEM_URL, new String[]{TrackData.Tem.TemColumns.trackStatus}, null, null, null);
+
+        int trackStatus = -1;
+
+        if (cursor.moveToNext()) {
+            trackStatus = cursor.getInt(cursor.getColumnIndex(TrackData.Tem.TemColumns.trackStatus));
+        }
+
+        return trackStatus;
+    }
+
+    /**
+     * 插入临时表
+     * <p>
+     * author: hezhiWu
+     * created at 2018/2/6 14:44
+     */
+    private void instertTem(long trackId, int locationFlag, int trackStatus) {
         ContentValues values = new ContentValues();
-        values.put(TrackData.Track.TrackColumns.KEY, "");
-        values.put(TrackData.Track.TrackColumns.START_TIME, System.currentTimeMillis());
-        values.put(TrackData.Track.TrackColumns.FINISH_TIME, 0);
-        values.put(TrackData.Track.TrackColumns.DURATION, 0);
-        values.put(TrackData.Track.TrackColumns.START_LONGITUDE, location.getLongitude());
-        values.put(TrackData.Track.TrackColumns.FINISH_LONGITUDE, 0);
-        values.put(TrackData.Track.TrackColumns.START_LATITUDE, location.getLatitude());
-        values.put(TrackData.Track.TrackColumns.FINISH_LATITUDE, 0);
-        values.put(TrackData.Track.TrackColumns.DISTANCE, 0);
-        values.put(TrackData.Track.TrackColumns.SPEED, 0);
-        values.put(TrackData.Track.TrackColumns.STATUS, TrackConstant.TRACK_START);
-        values.put(TrackData.Track.TrackColumns.REMARK, "");
-        values.put(TrackData.Track.TrackColumns.REV_STR1, "");
-        values.put(TrackData.Track.TrackColumns.REV_STR2, "");
-        values.put(TrackData.Track.TrackColumns.REV_STR3, "");
-        values.put(TrackData.Track.TrackColumns.REV_STR4, "");
-        values.put(TrackData.Track.TrackColumns.REV_INT1, 0);
-        values.put(TrackData.Track.TrackColumns.REV_INT2, 0);
-        values.put(TrackData.Track.TrackColumns.REV_INT3, 0);
-        values.put(TrackData.Track.TrackColumns.REV_INT4, 0);
+        values.put(TrackData.Tem.TemColumns.trackId, trackId);
+        values.put(TrackData.Tem.TemColumns.locationFlag, locationFlag);
+        values.put(TrackData.Tem.TemColumns.trackStatus, trackStatus);
 
-        Uri uri = contentResolver.insert(TrackData.Track.TRACK_CONTENT_URI, values);
-        long id = -1;
-        if (uri != null && uri.getPathSegments() != null) {
-            id = IStringUtils.toLong(uri.getPathSegments().get(1));
-            SharedPreferencesUtils.setValue(DataApplication.getInstance(), TrackConstant.TRACK_ID_KEY, String.valueOf(id));
-        }
-        /*插入TrackPoint*/
-        if (id > 0) {
-            insterTrackPoint(id, location);
-        }
+        contentResolver.insert(TrackData.Tem.TRACK_TEM_URL, values);
+    }
 
-        return id;
+    /**
+     * 删除临时表
+     * <p>
+     * author: hezhiWu
+     * created at 2018/2/7 13:48
+     */
+    public void deleteTem() {
+        contentResolver.delete(TrackData.Tem.TRACK_TEM_URL, null, null);
     }
 
     /**
@@ -157,7 +135,14 @@ public class TrackHelper {
         long id = -1;
         if (uri != null && uri.getPathSegments() != null) {
             id = IStringUtils.toLong(uri.getPathSegments().get(1));
-            SharedPreferencesUtils.setValue(DataApplication.getInstance(), TrackConstant.TRACK_ID_KEY, String.valueOf(id));
+
+            instertTem(id, TrackConstant.TRACK_GATHER_FLAG, TrackConstant.TRACK_START_FLAG);
+//            Toast.makeText(context, "id=" + id, Toast.LENGTH_LONG).show();
+//
+//            SharedPreferencesUtils.setValue(DataApplication.getInstance(), TrackConstant.TRACK_ID_KEY, id);
+//
+//            long trackId = IStringUtils.toLong(SharedPreferencesUtils.getValue(DataApplication.getInstance(), TrackConstant.TRACK_ID_KEY, 0L).toString());
+//            Toast.makeText(context, "trackId=" + trackId, Toast.LENGTH_LONG).show();
         }
 
         mLastLng = lng;
@@ -200,7 +185,6 @@ public class TrackHelper {
         if (location == null)
             return;
 
-
         /*处理系统回收APP,距离异常的情况*/
         if (mLastLng <= 0 || mLastLat <= 0) {
             mLastLng = location.getLongitude();
@@ -216,7 +200,8 @@ public class TrackHelper {
             return;
 
         /*更新距离*/
-        distance = table.getDistance() + AMapUtils.calculateLineDistance(new LatLng(mLastLat, mLastLng), new LatLng(location.getLatitude(), location.getLongitude()));
+        distance = table.getDistance() + AMapUtils.calculateLineDistance(new LatLng(mLastLat, mLastLng),
+                new LatLng(location.getLatitude(), location.getLongitude()));
         if (distance > 0)
             updateTrackDistance(trackId, distance);
 
@@ -322,30 +307,22 @@ public class TrackHelper {
      *
      * @param trackId
      */
-    public void updateTrackDuration(long trackId) {
+    public long updateTrackDuration(long trackId) {
         TrackTable table = queryTrack(trackId);
         if (table == null)
-            return;
+            return -1;
 
         if (table.getStatus() == TrackConstant.TRACK_STOP
                 || table.getStatus() == TrackConstant.TRACK_END)
-            return;
+            return -1;
 
-        if (mLastLocationTime == 0) {
-            mLastLocationTime = System.currentTimeMillis();
-            return;
-        }
-
-        /*更新时长*/
-        long d = System.currentTimeMillis() - mLastLocationTime;
-
-        duration = d + table.getDuration();
+        long duration = 1000 + table.getDuration();
 
         ContentValues values = new ContentValues();
         values.put(TrackData.Track.TrackColumns.DURATION, duration);
         contentResolver.update(TrackData.Track.TRACK_CONTENT_URI, values, TrackData.Track.TrackColumns._ID + " = " + trackId, null);
 
-        mLastLocationTime = System.currentTimeMillis();
+        return duration;
     }
 
     /**
@@ -397,7 +374,6 @@ public class TrackHelper {
         mLastLocationTime = 0;
         distance = 0;
         speed = 0;
-        duration = 0;
     }
 
     /**
@@ -428,15 +404,5 @@ public class TrackHelper {
      */
     public float getSpeed() {
         return speed;
-    }
-
-    /**
-     * 返回时长
-     * <p>
-     * author: hezhiWu
-     * created at 2017/11/28 10:07
-     */
-    public long getDuration() {
-        return duration;
     }
 }

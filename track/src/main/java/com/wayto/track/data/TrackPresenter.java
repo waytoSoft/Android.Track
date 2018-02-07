@@ -65,8 +65,8 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
     public void destroy() {
         mTrackRemote.onDestroy();
         mActivity = null;
-        startPointLng=0;
-        startPointLat=0;
+        startPointLng = 0;
+        startPointLat = 0;
     }
 
     @Override
@@ -75,6 +75,11 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
             return;
 
         mTrackMainView.onSwitchFragment(flag);
+    }
+
+    @Override
+    public void onStartLocation() {
+        mTrackRemote.onStartLocation(mActivity);
     }
 
     @Override
@@ -121,6 +126,12 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
 
         status = TrackConstant.TRACK_START;
 
+        /*保存起点*/
+        long trackId=mTrackRemote.insterTrackTable();
+
+        /*保存临时点*/
+        mTrackRemote.instertTem(trackId,status);
+
         if (startTimer) {
             startTimer();
         } else {
@@ -143,6 +154,11 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
 
         status = TrackConstant.TRACK_CONTINUE;
 
+        /*更新临时表状态*/
+        long trackId=mTrackRemote.queryTrackIdFromTem();
+
+        mTrackRemote.updateTem(trackId,status);
+
         mTrackPanelView.onTrackStartButtonVisibility(View.GONE);
         mTrackPanelView.onTrackContinueButtonVisibility(View.GONE);
         mTrackPanelView.onTrackEndButtonVisibility(View.GONE);
@@ -159,10 +175,12 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
         if (mActivity == null || mActivity.isFinishing())
             return;
 
-        if (mTrackMapView!=null)
-            mTrackMapView.removeMapView();
-
         status = TrackConstant.TRACK_STOP;
+
+        /*更新临时表状态*/
+        long trackId=mTrackRemote.queryTrackIdFromTem();
+
+        mTrackRemote.updateTem(trackId,status);
 
         mTrackPanelView.onTrackStartButtonVisibility(View.GONE);
         mTrackPanelView.onTrackStopButtonVisibility(View.GONE);
@@ -172,8 +190,8 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
         mTrackRemote.onStopTrackGather(mActivity);
 
         //reset Data
-        startPointLat=0;
-        startPointLng=0;
+        startPointLat = 0;
+        startPointLng = 0;
     }
 
     @Override
@@ -186,6 +204,13 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
 
         status = TrackConstant.TRACK_END;
 
+        /*删除临时表*/
+//        mTrackRemote.deleteTem();
+         /*更新临时表状态*/
+        long trackId=mTrackRemote.queryTrackIdFromTem();
+
+        mTrackRemote.updateTem(trackId,status);
+
         mTrackPanelView.onTrackStopButtonVisibility(View.GONE);
         mTrackPanelView.onTrackEndButtonVisibility(View.GONE);
         mTrackPanelView.onTrackContinueButtonVisibility(View.GONE);
@@ -193,6 +218,9 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
 
         mTrackRemote.onEndTrackGater(mActivity);
         mTrackPanelView.resetView();
+
+        if (mTrackMapView != null)
+            mTrackMapView.removeMapView();
     }
 
     @Override
@@ -262,14 +290,14 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
     }
 
     @Override
-    public void onRefreshLocationPoint(LocationEntity entity) {
+    public void onDrawableTrackLine(double lat, double lng) {
         if (mTrackMapView == null)
             return;
 
         if (startPointLng == 0 && startPointLat == 0) {
-            if (entity != null) {
-                startPointLng = entity.getLongitude();
-                startPointLat = entity.getLatitude();
+            if (lat > 0 && lng > 0) {
+                startPointLng = lng;
+                startPointLat = lat;
             }
 
             if (status == TrackConstant.TRACK_START
@@ -279,7 +307,15 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
             }
         }
 
-        mTrackMapView.refreshLocationPoint(entity);
+        mTrackMapView.drawableTrackLine(lat, lng);
+    }
+
+    @Override
+    public void onRefreshLocation(double lat, double lng) {
+        if (mTrackMapView == null)
+            return;
+
+        mTrackMapView.refreshLocation(lat, lng);
     }
 
     /**
@@ -336,6 +372,11 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
     class TrackPanelTask extends TimerTask {
         @Override
         public void run() {
+            if (indext == 0 && mTrackRemote != null) {
+                mTrackRemote.onStartTrackGather(mActivity);
+            }
+
+            //关闭倒记时
             if (indext == 0) {
                 cancelTimer();
 
@@ -353,11 +394,6 @@ public class TrackPresenter implements TrackContract.Presenter, TrackDataSource.
                         }
                     });
                 }
-            }
-
-             /*提前1秒调用,解决定时延迟问题*/
-            if (indext == 1 && mTrackRemote != null) {
-                mTrackRemote.onStartTrackGather(mActivity);
             }
 
             mActivity.runOnUiThread(new Runnable() {

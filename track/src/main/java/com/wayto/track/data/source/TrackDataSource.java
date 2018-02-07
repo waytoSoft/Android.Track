@@ -27,12 +27,16 @@ public interface TrackDataSource {
 
         void onQueryTrackPointTables(List<TrackPointTable> trackPointTables);
 
-        void onRefreshLocationPoint(LocationEntity entity);
+        void onDrawableTrackLine(double lat, double lng);
+
+        void onRefreshLocation(double lat,double lng);
 
         void getTrackStatus(int status);
     }
 
     void onSetCallBack(TrackCallBack callBack);
+
+    void onStartLocation(Context context);
 
     void onStartTrackGather(Context context);
 
@@ -47,6 +51,18 @@ public interface TrackDataSource {
     void onCheckTrack(long trackId);
 
     int queryTrackStatus(long trackId);
+
+    long insterTrackTable();
+
+    void instertTem(long trackId,int trackStatus);
+
+    long queryTrackIdFromTem();
+
+    int queryTrackStatusFromTem();
+
+    void updateTem(long trackId,int trackStatus);
+
+    void deleteTem();
 
     void onDestroy();
 }

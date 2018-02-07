@@ -36,6 +36,7 @@ public class TrackHistoryRemote implements TrackHistoryDataSource {
                     .queryBuilder()
                     .where(TrackTableDao.Properties.Distance.gt(10))
                     .where(TrackTableDao.Properties.Status.eq(TrackConstant.TRACK_END))
+                    .orderDesc(TrackTableDao.Properties.StartTime)
                     .list();
 
             callBack.onQueryTrackHistorySuccess(trackTables);

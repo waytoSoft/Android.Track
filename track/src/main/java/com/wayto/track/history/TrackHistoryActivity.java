@@ -137,7 +137,8 @@ public class TrackHistoryActivity extends AppCompatActivity implements PullToRef
 
     @Override
     public void onQueryEmpty() {
-        mRecyclerView.showEmptyTextView();
+//        mRecyclerView.showEmptyTextView();
+        mRecyclerView.showEmptyTextView(R.string.empty_history);
     }
 
     @Override

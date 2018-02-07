@@ -3,6 +3,8 @@ package com.wayto.track.provider;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
+import com.wayto.track.storage.TemTable;
+import com.wayto.track.storage.TemTableDao;
 import com.wayto.track.storage.TrackPointTableDao;
 import com.wayto.track.storage.TrackTableDao;
 
@@ -16,6 +18,31 @@ import com.wayto.track.storage.TrackTableDao;
 public final class TrackData {
     private final String TAG = "TrackData";
 
+
+    /**
+     * 临时表
+     * <p>
+     * author: hezhiWu
+     * created at 2018/2/6 14:37
+     */
+    public static final class Tem {
+        public static final String AUTHORITY = "com.wayto.independent.tem";
+
+        private static final String CONTENT_AUTHORITY_SLASH = "content://" + AUTHORITY + "/";
+
+        public static final String TABLE_NAME = TemTableDao.TABLENAME;
+
+        public static final Uri TRACK_TEM_URL = Uri.parse(CONTENT_AUTHORITY_SLASH + TABLE_NAME);
+
+        public interface TemColumns extends BaseColumns {
+            String trackId = TemTableDao.Properties.TrackId.columnName;
+
+            String locationFlag = TemTableDao.Properties.LocationFlag.columnName;
+
+            String trackStatus = TemTableDao.Properties.TrackStatus.columnName;
+
+        }
+    }
 
     /**
      * 足迹表
@@ -43,7 +70,7 @@ public final class TrackData {
 
             String FINISH_TIME = TrackTableDao.Properties.FinishTime.columnName;
 
-            String DURATION=TrackTableDao.Properties.Duration.columnName;
+            String DURATION = TrackTableDao.Properties.Duration.columnName;
 
             String START_LONGITUDE = TrackTableDao.Properties.StartLongitude.columnName;
 

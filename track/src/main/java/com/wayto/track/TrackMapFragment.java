@@ -2,6 +2,7 @@ package com.wayto.track;
 
 import android.annotation.SuppressLint;
 import android.graphics.Color;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
@@ -19,6 +20,7 @@ import com.amap.api.maps.MapView;
 import com.amap.api.maps.model.BitmapDescriptor;
 import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
+import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.MyLocationStyle;
 import com.amap.api.maps.model.Polyline;
@@ -76,6 +78,8 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
 
     private Thread mThreed;
 
+    private Marker locationMarker;
+
     public TrackMapFragment() {
 
     }
@@ -102,6 +106,8 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
         }
 
         initMapView();
+
+        mPresenter.onStartLocation();
 
         mThreed = new Thread(new Runnable() {
             @Override
@@ -144,17 +150,25 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
         mAMap.getUiSettings().setRotateGesturesEnabled(false);
         mAMap.getUiSettings().setMyLocationButtonEnabled(false);
 
-        mAMap.setMyLocationEnabled(true);
+//        mAMap.setMyLocationEnabled(true);
         mAMap.setMapType(AMap.MAP_TYPE_NIGHT);
 
-        locationStyle = new MyLocationStyle();
-        locationStyle.showMyLocation(true);
-        locationStyle.radiusFillColor(Color.parseColor("#00000000"));
-        locationStyle.strokeColor(Color.parseColor("#00000000"));
+//        locationStyle = new MyLocationStyle();
+//        locationStyle.showMyLocation(true);
+//        locationStyle.radiusFillColor(Color.parseColor("#00000000"));
+//        locationStyle.strokeColor(Color.parseColor("#00000000"));
 
-        mAMap.setMyLocationStyle(locationStyle);
+//        mAMap.setMyLocationStyle(locationStyle);
         mAMap.moveCamera(new CameraUpdateFactory().zoomTo(16));
+
+        mAMap.setOnMyLocationChangeListener(new AMap.OnMyLocationChangeListener() {
+            @Override
+            public void onMyLocationChange(Location location) {
+
+            }
+        });
     }
+
 
     @Override
     public void setmPresenter(TrackContract.Presenter mPresenter) {
@@ -185,11 +199,14 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
     }
 
     @Override
-    public void refreshLocationPoint(LocationEntity locationEntity) {
+    public void drawableTrackLine(double lat, double lng) {
+        if (lat <= 0 || lng <=0)
+            return;
+
         if (lastLatLng == null) {
-            lastLatLng = new LatLng(locationEntity.getLatitude(), locationEntity.getLongitude());
+            lastLatLng = new LatLng(lat, lng);
         } else {
-            LatLng latLng = new LatLng(locationEntity.getLatitude(), locationEntity.getLongitude());
+            LatLng latLng = new LatLng(lat, lng);
 
             tempLatLngs.add(lastLatLng);
             tempLatLngs.add(latLng);
@@ -205,16 +222,35 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
     }
 
     @Override
+    public void refreshLocation(double lat, double lng) {
+        LatLng latLng = new LatLng(lat, lng);
+
+        if (locationMarker == null) {
+            locationMarker = drawablePointMarker(lng, lat, R.mipmap.icon_nav);
+        } else {
+            locationMarker.setPosition(latLng);
+        }
+
+//        mAMap.moveCamera(CameraUpdateFactory.changeLatLng(latLng));
+        mAMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+    }
+
+    @Override
     public void drawableStartPoint(double lat, double lng) {
         drawablePointMarker(lng, lat, R.mipmap.icon_track_start);
     }
 
     @Override
     public void removeMapView() {
-        if (mAMap==null)
+        if (mAMap == null)
             return;
 
         mAMap.clear();
+        mTrackSolidArrowLineList.clear();
+        mTrackDotLineList.clear();
+        locationMarker = null;
+        lastLatLng = null;
+        tempLatLngs.clear();
     }
 
     @OnClick({R.id.Track_Map_back_Layout, R.id.Track_Map_Location_Layout})
@@ -234,14 +270,14 @@ public class TrackMapFragment extends MapFragment implements TrackContract.Track
      * author: hezhiWu
      * created at 2017/12/13 16:18
      */
-    private void drawablePointMarker(double lng, double lat, int iconResId) {
+    private Marker drawablePointMarker(double lng, double lat, int iconResId) {
         LatLng latLng = new LatLng(lat, lng);
         MarkerOptions markerOptions = new MarkerOptions();
         BitmapDescriptor bitmapDescriptor = BitmapDescriptorFactory.fromResource(iconResId);
         markerOptions.position(latLng).icon(bitmapDescriptor);
         markerOptions.setFlat(true);//平贴地图设置为 true，面对镜头设置为 false
         markerOptions.draggable(false);//默认设置Marker不可拖动
-        mAMap.addMarker(markerOptions);
+        return mAMap.addMarker(markerOptions);
     }
 
     /**

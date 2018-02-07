@@ -5,20 +5,14 @@ import android.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.KeyEvent;
 
-import com.wayto.track.common.SharedPreferencesUtils;
 import com.wayto.track.common.TrackConstant;
 import com.wayto.track.data.TrackContract;
 import com.wayto.track.data.TrackPresenter;
+import com.wayto.track.data.source.TrackRemote;
 import com.wayto.track.service.FloatingService;
-import com.wayto.track.storage.TrackTable;
-import com.wayto.track.storage.TrackTableDao;
-import com.wayto.track.utils.IStringUtils;
 import com.wayto.track.utils.PermissionHelper;
-
-import java.util.List;
 
 /**
  * 轨迹采集
@@ -47,22 +41,8 @@ public class TrackActivity extends AppCompatActivity implements TrackContract.Tr
         FloatingService.removeLoatingButton(this);
 
         /*获取TrackId,判断当前记录状态, 若状态结束，TrackId默认为0*/
-        long trackId = IStringUtils.toLong(SharedPreferencesUtils.getValue(this, TrackConstant.TRACK_ID_KEY, "").toString());
-        Log.d(TAG, "trackId=" + trackId);
-
-        List<TrackTable> tables = DataApplication.getInstance().getDaoSession().getTrackTableDao()
-                .queryBuilder()
-                .where(TrackTableDao.Properties.Id.eq(trackId))
-                .list();
-
-        int status = -1;
-        if (tables != null && tables.size() > 0) {
-            TrackTable table = tables.get(0);
-            status = table.getStatus();
-            if (table.getStatus() == TrackConstant.TRACK_END) {
-                trackId = 0;
-            }
-        }
+        long trackId=TrackRemote.newInstall().queryTrackIdFromTem();
+        int status = TrackRemote.newInstall().queryTrackStatusFromTem();
 
         Bundle bundle = new Bundle();
         bundle.putLong("trackId", trackId);
@@ -100,6 +80,7 @@ public class TrackActivity extends AppCompatActivity implements TrackContract.Tr
     @Override
     public void finish() {
         super.finish();
+
         overridePendingTransition(0, R.anim.slide_out_right);
         System.gc();
     }

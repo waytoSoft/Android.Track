@@ -48,9 +48,11 @@ public interface TrackContract {
     interface TrackMapView extends BaseView<Presenter> {
         void queryTrackPointTables(List<TrackPointTable> trackPointTables);
 
-        void refreshLocationPoint(LocationEntity locationEntity);
+        void drawableTrackLine(double lat, double lng);
 
         void drawableStartPoint(double lat, double lng);
+
+        void refreshLocation(double lat,double lng);
 
         void removeMapView();
     }
@@ -58,6 +60,8 @@ public interface TrackContract {
     interface Presenter extends BasePresenter {
 
         void onSwitchFragment(int flag);
+
+        void onStartLocation();
 
         void onCheckTrack(long trackId);
 

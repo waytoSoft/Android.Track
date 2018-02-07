@@ -51,7 +51,7 @@
 
         <service
             android:name="com.wayto.track.service.LocationService"
-            android:process=":Track" />
+            android:process=":waytoTrackLocation"/>
 
         <service android:name="com.wayto.track.service.FloatingService" />
 
@@ -62,6 +62,10 @@
         <provider
             android:name="com.wayto.track.provider.TrackPointProvider"
             android:authorities="com.wayto.independent.trackPoint" />
+
+        <provider
+            android:name="com.wayto.track.provider.TemProvider"
+            android:authorities="com.wayto.independent.tem" />
 
         <!--<receiver android:name="com.wayto.track.service.LocationService$TrackAlarReceiver">-->
         <!--<intent-filter>-->
